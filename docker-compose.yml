@@ -1,0 +1,155 @@
+services:
+  # 1. Serveur Web Nginx
+  web:
+    image: nginx:alpine
+    container_name: saas_school_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - saas_network
+
+  # 2. Back-end PHP 8.3 FPM
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: saas_school_app
+    restart: unless-stopped
+    volumes:
+      - .:/var/www/html
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=saas_documents
+      - DB_USERNAME=saas_user
+      - DB_PASSWORD=saas_password
+      - QUEUE_CONNECTION=redis
+      - SESSION_DRIVER=redis
+      - CACHE_STORE=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_CLIENT=predis
+      - MAIL_MAILER=smtp
+      - MAIL_HOST=mailpit
+      - MAIL_PORT=1025
+      - MAIL_FROM_ADDRESS=noreply@docscolaire-saas.com
+      - MAIL_FROM_NAME=DocScolaire SaaS
+    networks:
+      - saas_network
+    depends_on:
+      - db
+      - redis
+      - mailpit
+
+  # 3. Base de Données MySQL 8.0
+  db:
+    image: mysql:8.0
+    container_name: saas_school_db
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-ChangeMeInProduction}
+      MYSQL_DATABASE: ${DB_DATABASE:-saas_documents}
+      MYSQL_USER: ${DB_USERNAME:-saas_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-ChangeMeInProduction}
+    ports:
+      - "127.0.0.1:3306:3306"  # Accessible uniquement en local
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/sql/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    networks:
+      - saas_network
+
+  # 4. Redis (Cache & Sessions performantes)
+  redis:
+    image: redis:7-alpine
+    container_name: saas_school_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - saas_network
+
+  # 5. Serveur SMTP & Webmail de Test (Mailpit)
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: saas_school_mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - saas_network
+
+  # 6. Worker d'arrière-plan (Génération PDF Asynchrone géré par Supervisor)
+  worker:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: saas_school_worker
+    restart: unless-stopped
+    command: /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+    volumes:
+      - .:/var/www/html
+      - ./docker/supervisor/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf:ro
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=saas_documents
+      - DB_USERNAME=saas_user
+      - DB_PASSWORD=saas_password
+      - QUEUE_CONNECTION=redis
+      - SESSION_DRIVER=redis
+      - CACHE_STORE=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_CLIENT=predis
+      - MAIL_MAILER=smtp
+      - MAIL_HOST=mailpit
+      - MAIL_PORT=1025
+      - MAIL_FROM_ADDRESS=noreply@docscolaire-saas.com
+      - MAIL_FROM_NAME=DocScolaire SaaS
+    networks:
+      - saas_network
+    depends_on:
+      - db
+      - redis
+      - app
+      - mailpit
+
+  # 7. Interface Web MySQL (phpMyAdmin - restreint à localhost pour sécurité)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: saas_school_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: saas_user
+      PMA_PASSWORD: saas_password
+      UPLOAD_LIMIT: 64M
+    networks:
+      - saas_network
+    depends_on:
+      - db
+
+volumes:
+  db_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  saas_network:
+    driver: bridge
