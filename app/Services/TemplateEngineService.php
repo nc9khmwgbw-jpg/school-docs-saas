@@ -89,17 +89,17 @@ class TemplateEngineService
                 if (class_exists(\chillerlan\QRCode\QRCode::class)) {
                     $qrOptions = new \chillerlan\QRCode\QROptions([
                         'outputInterface' => \chillerlan\QRCode\Output\QRGdImagePNG::class,
-                        'scale'           => 4,
+                        'scale'           => 6,
                     ]);
                     $qrBase64 = (new \chillerlan\QRCode\QRCode($qrOptions))->render($verifyUrl);
-                    $qrImgTag = '<img src="' . $qrBase64 . '" style="width:78px;height:78px;display:block;margin:0 auto;" alt="QR Code">';
+                    $qrImgTag = '<img src="' . $qrBase64 . '" style="width:90px;height:90px;display:block;margin:0 auto;" alt="QR Code">';
                 }
             } catch (\Throwable $e) {
                 $qrImgTag = '<div style="width:70px;height:70px;background:#000000;color:#ffffff;font-size:8px;text-align:center;padding:12px;font-weight:bold;">QR CODE<br/>SCELLÉ</div>';
             }
 
             $qrBloc = '<table style="margin-top:20px;border:1px solid #000000;background:#ffffff;padding:7px 10px;width:100%;border-collapse:collapse;"><tr>'
-                . '<td style="width:85px;vertical-align:middle;text-align:center;padding:2px 8px 2px 2px;border-right:1px solid #999999;">' . $qrImgTag . '</td>'
+                . '<td style="width:98px;vertical-align:middle;text-align:center;padding:2px 8px 2px 2px;border-right:1px solid #999999;">' . $qrImgTag . '</td>'
                 . '<td style="padding-left:12px;vertical-align:middle;font-size:9.5px;color:#000000;line-height:1.45;">'
                 . '<strong style="color:#000000;font-size:10.5px;text-transform:uppercase;letter-spacing:0.5px;">DOCUMENT ACADÉMIQUE OFFICIEL SCELLÉ NUMÉRIQUEMENT</strong><br/>'
                 . '<span style="color:#222222;">Scannez ce QR Code ou accédez à l\'URL suivante pour certifier l\'authenticité de l\'original :</span><br/>'
