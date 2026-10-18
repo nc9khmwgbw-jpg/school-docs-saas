@@ -1,0 +1,6 @@
+matricule,nom,prenom,email,filiere,niveau,annee_universitaire,date_naissance,lieu_naissance,cin,cne
+E2026-1001,Benali,Mehdi,mehdi.benali@etudiant.ma,Génie Logiciel & Systèmes d'Information,Master 2,2025-2026,14/05/2001,Casablanca,BE892143,R139876543
+E2026-1002,Alami,Sara,sara.alami@ens.ma,Génie Électrique & Télécoms,Master 1,2025-2026,22/09/2002,Rabat,AB765432,G134567890
+E2026-1003,Tazi,Youssef,youssef.tazi@etudiant.ma,Intelligence Artificielle & Big Data,Master 2,2025-2026,03/11/2000,Fès,CD452319,N145678901
+E2026-1004,Idrissi,Kenza,kenza.idrissi@etudiant.ma,Management des Systèmes d'Information,Master 1,2025-2026,18/01/2003,Marrakech,EE987654,M123456789
+E2026-1005,Chraibi,Amine,amine.chraibi@etudiant.ma,Cybersécurité & Réseaux,Master 2,2025-2026,29/07/2001,Tanger,KB123890,P132457890

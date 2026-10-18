@@ -116,17 +116,20 @@
         <div class="card">
             <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">Format attendu du fichier CSV</h3>
             <div style="font-size:13px;color:var(--text-muted);line-height:1.6;">
-                <p style="margin-bottom:10px;">Le fichier doit comporter une ligne d'en-tête avec les colonnes :</p>
+                <p style="margin-bottom:10px;">Le fichier doit comporter une ligne d'en-tête avec les colonnes administratives :</p>
                 <ul style="padding-left:18px;margin-bottom:12px;">
-                    <li><span class="code-pill">matricule</span> <strong>(obligatoire)</strong> : identifiant unique (ex: E2026-9901)</li>
-                    <li><span class="code-pill">filiere</span> : nom de la formation (ex: Génie Logiciel)</li>
-                    <li><span class="code-pill">niveau</span> : niveau d'études (ex: Master 2)</li>
+                    <li><span class="code-pill">matricule</span> <strong>(obligatoire)</strong> : identifiant unique (ex: E2026-1001)</li>
+                    <li><span class="code-pill">nom</span> &amp; <span class="code-pill">prenom</span> : état civil de l'étudiant</li>
+                    <li><span class="code-pill">email</span> : adresse email pour l'envoi des documents et accès</li>
+                    <li><span class="code-pill">filiere</span> : filière ou spécialité (ex: Génie Informatique)</li>
+                    <li><span class="code-pill">niveau</span> : niveau d'études (ex: Master 2, 3ème Année...)</li>
                     <li><span class="code-pill">annee_universitaire</span> : session scolaire (ex: 2025-2026)</li>
-                    <li><span class="code-pill">moyenne</span> : note sur 20 (ex: 16.50)</li>
-                    <li><span class="code-pill">mention</span> : Très Bien, Bien...</li>
+                    <li><span class="code-pill">date_naissance</span>, <span class="code-pill">lieu_naissance</span>, <span class="code-pill">cin</span>, <span class="code-pill">cne</span> : données d'état civil (reprises sur les attestations)</li>
                 </ul>
-                <p>Toute colonne supplémentaire sera automatiquement enregistrée comme attribut dynamique.</p>
-                <a href="/sample_etudiants.csv" class="btn-sample" download>📄 Télécharger le fichier CSV exemple</a>
+                <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+                    ℹ️ <em>Aucune note n'est requise. Les certificats de scolarité, attestations de réussite et conventions de stage se basent directement sur ces données d'inscription.</em>
+                </p>
+                <a href="/sample_etudiants.csv" class="btn-sample" download>📄 Télécharger le modèle CSV officiel prêt à l'emploi</a>
             </div>
         </div>
     </div>
@@ -173,12 +176,12 @@
                 <input type="text" name="annee_universitaire" placeholder="Ex: 2025-2026" required value="2025-2026" class="form-input-sm">
             </div>
             <div>
-                <label style="display:block;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Moyenne (sur 20)</label>
-                <input type="number" step="0.01" min="0" max="20" name="moyenne" placeholder="16.50" value="16.50" class="form-input-sm">
+                <label style="display:block;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Moyenne (optionnelle)</label>
+                <input type="number" step="0.01" min="0" max="20" name="moyenne" placeholder="Non requise" class="form-input-sm">
             </div>
             <div>
-                <label style="display:block;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Mention</label>
-                <input type="text" name="mention" placeholder="Ex: Très Bien" value="Très Bien" class="form-input-sm">
+                <label style="display:block;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Mention (optionnelle)</label>
+                <input type="text" name="mention" placeholder="Ex: Très Bien" class="form-input-sm">
             </div>
             <div style="grid-column:1 / -1;margin-top:6px;">
                 <button type="submit" class="btn-primary-action">
