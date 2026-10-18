@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Ecole;
 use App\Models\Utilisateur;
 use App\Models\EtudiantDonnee;
+use App\Models\ModeleDocument;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -12,8 +13,7 @@ use Illuminate\Support\Str;
 class DemoDataSeeder extends Seeder
 {
     /**
-     * Créer des données de démonstration pour tester la plateforme.
-     * ⚠️ À UTILISER UNIQUEMENT EN DÉVELOPPEMENT !
+     * Données de démonstration et fixtures pour tests unitaires & E2E.
      */
     public function run(): void
     {
@@ -22,7 +22,10 @@ class DemoDataSeeder extends Seeder
             return;
         }
 
-        // École de démonstration
+        $placeholderPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+        $placeholderJpg = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+
+        // 1. École ENS-2026
         $ecole = Ecole::firstOrCreate(
             ['code_unique' => 'ENS-2026'],
             [
@@ -33,13 +36,29 @@ class DemoDataSeeder extends Seeder
                 'telephone'          => '+212 537 000 001',
                 'couleur_primaire'   => '#1D4ED8',
                 'couleur_secondaire' => '#1E40AF',
+                'logo_data'          => $placeholderPng,
+                'statut'             => 'actif',
+            ]
+        );
+        if (empty($ecole->logo_data)) {
+            $ecole->update(['logo_data' => $placeholderPng]);
+        }
+
+        // 2. École POLY-2026 (Isolation cross-tenant)
+        $poly = Ecole::firstOrCreate(
+            ['code_unique' => 'POLY-2026'],
+            [
+                'uuid'               => Str::uuid(),
+                'nom'                => 'Institut Polytechnique de Casablanca',
+                'adresse'            => 'Boulevard Hassan II, Casablanca 20000',
+                'email_contact'      => 'contact@poly.ma',
+                'couleur_primaire'   => '#059669',
+                'couleur_secondaire' => '#047857',
                 'statut'             => 'actif',
             ]
         );
 
-        $this->command->info("✅ École de démo créée : {$ecole->nom}");
-
-        // Admin école de démo
+        // 3. Admin ENS
         $adminPassword = env('DEMO_ADMIN_PASSWORD', 'Secret2026!');
         $adminEcole = Utilisateur::withoutGlobalScopes()->firstOrCreate(
             ['email' => 'admin@ens.ma'],
@@ -55,7 +74,7 @@ class DemoDataSeeder extends Seeder
             ]
         );
 
-        // Étudiant test Sara Alami (ENS)
+        // 4. Étudiante Sara Alami (ENS)
         $saraPassword = env('DEMO_ETUDIANT_PASSWORD', 'Secret2026!');
         $sara = Utilisateur::withoutGlobalScopes()->firstOrCreate(
             ['email' => 'sara.alami@ens.ma'],
@@ -67,9 +86,13 @@ class DemoDataSeeder extends Seeder
                 'nom'          => 'Alami',
                 'prenom'       => 'Sara',
                 'mot_de_passe' => Hash::make($saraPassword),
+                'photo_data'   => $placeholderJpg,
                 'statut'       => 'actif',
             ]
         );
+        if (empty($sara->photo_data)) {
+            $sara->update(['photo_data' => $placeholderJpg]);
+        }
 
         EtudiantDonnee::firstOrCreate(
             ['ecole_id' => $ecole->id, 'matricule' => 'E2026-9901'],
@@ -87,8 +110,37 @@ class DemoDataSeeder extends Seeder
             ]
         );
 
-        // Modèle par défaut : Attestation de Réussite
-        \App\Models\ModeleDocument::firstOrCreate(
+        // 5. Étudiant Mehdi Tazi (ENS - avec photo pour StudentPhotoAndLogoTest)
+        $mehdi = Utilisateur::withoutGlobalScopes()->firstOrCreate(
+            ['matricule' => 'E2026-8888'],
+            [
+                'uuid'         => Str::uuid(),
+                'ecole_id'     => $ecole->id,
+                'role'         => 'etudiant',
+                'matricule'    => 'E2026-8888',
+                'nom'          => 'Tazi',
+                'prenom'       => 'Mehdi',
+                'email'        => 'e2026-8888@etudiant.ma',
+                'mot_de_passe' => Hash::make('Secret2026!'),
+                'photo_data'   => $placeholderJpg,
+                'statut'       => 'actif',
+            ]
+        );
+        if (empty($mehdi->photo_data)) {
+            $mehdi->update(['photo_data' => $placeholderJpg]);
+        }
+
+        EtudiantDonnee::firstOrCreate(
+            ['ecole_id' => $ecole->id, 'matricule' => 'E2026-8888'],
+            [
+                'filiere'              => 'Informatique',
+                'niveau'               => 'Licence 3',
+                'annee_universitaire'  => '2025-2026',
+            ]
+        );
+
+        // 6. Modèles de documents ENS
+        ModeleDocument::firstOrCreate(
             ['ecole_id' => $ecole->id, 'type_document' => 'attestation_reussite'],
             [
                 'uuid'                => Str::uuid(),
@@ -102,8 +154,7 @@ class DemoDataSeeder extends Seeder
             ]
         );
 
-        // Modèle par défaut : Certificat de Scolarité
-        \App\Models\ModeleDocument::firstOrCreate(
+        ModeleDocument::firstOrCreate(
             ['ecole_id' => $ecole->id, 'type_document' => 'certificat_scolarite'],
             [
                 'uuid'                => Str::uuid(),
@@ -117,6 +168,6 @@ class DemoDataSeeder extends Seeder
             ]
         );
 
-        $this->command->info("\n✨ Données de démonstration ENS initialisées avec succès !");
+        $this->command->info("✨ Données de démonstration et fixtures de test initialisées !");
     }
 }
