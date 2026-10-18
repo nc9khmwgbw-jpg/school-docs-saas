@@ -227,7 +227,7 @@ log_info "Configuration du worker d'arrière-plan Supervisor..."
 cat <<SUPERVISOR > "/etc/supervisor/conf.d/docscolaire-worker.conf"
 [program:docscolaire-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=php ${APP_DIR}/artisan queue:work database --sleep=2 --tries=3 --max-time=3600 --timeout=120
+command=php ${APP_DIR}/artisan queue:work redis --sleep=2 --tries=3 --max-time=3600 --timeout=120
 autostart=true
 autorestart=true
 user=${APP_USER}
@@ -241,8 +241,8 @@ supervisorctl reread
 supervisorctl update
 supervisorctl start docscolaire-worker:* || true
 
-# ── 8. Sauvegardes automatiques quotidiennes (Cron) ────────────────────────────
-log_info "Mise en place du script de sauvegarde quotidienne automatique..."
+# ── 8. Sauvegardes automatiques quotidiennes & Scheduler Laravel (Cron) ─────────
+log_info "Mise en place du script de sauvegarde quotidienne et du scheduler Laravel..."
 mkdir -p /var/backups/docscolaire
 cat <<'BACKUP' > /usr/local/bin/docscolaire-backup.sh
 #!/bin/bash
@@ -265,8 +265,8 @@ BACKUP
 sed -i "s/\"\$1\"/\"${DB_PASS}\"/g" /usr/local/bin/docscolaire-backup.sh
 chmod +x /usr/local/bin/docscolaire-backup.sh
 
-# Cron à 02h00 chaque nuit
-(crontab -l 2>/dev/null | grep -v 'docscolaire-backup'; echo "0 2 * * * /usr/local/bin/docscolaire-backup.sh") | crontab -
+# Cron : Laravel Scheduler chaque minute + Sauvegarde à 02h00 chaque nuit
+(crontab -l 2>/dev/null | grep -v 'docscolaire' | grep -v 'schedule:run'; echo "* * * * * cd ${APP_DIR} && php artisan schedule:run >> /dev/null 2>&1"; echo "0 2 * * * /usr/local/bin/docscolaire-backup.sh") | crontab -
 
 # ── 9. Sécurité du pare-feu UFW ────────────────────────────────────────────────
 log_info "Activation du pare-feu UFW (Ports 22 SSH, 80 HTTP, 443 HTTPS)..."
