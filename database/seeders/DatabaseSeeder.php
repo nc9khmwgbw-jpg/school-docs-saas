@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             SuperAdminSeeder::class,
-            // DemoDataSeeder::class, // Décommenter pour générer les données de démo
+            DemoDataSeeder::class,
         ]);
     }
 }

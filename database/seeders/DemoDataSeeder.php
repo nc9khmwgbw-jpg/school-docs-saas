@@ -40,7 +40,7 @@ class DemoDataSeeder extends Seeder
         $this->command->info("✅ École de démo créée : {$ecole->nom}");
 
         // Admin école de démo
-        $adminPassword = Str::random(12);
+        $adminPassword = env('DEMO_ADMIN_PASSWORD', 'Secret2026!');
         $adminEcole = Utilisateur::withoutGlobalScopes()->firstOrCreate(
             ['email' => 'admin@ens.ma'],
             [
@@ -48,57 +48,75 @@ class DemoDataSeeder extends Seeder
                 'ecole_id'     => $ecole->id,
                 'role'         => 'admin_ecole',
                 'matricule'    => null,
-                'nom'          => 'Administrateur',
-                'prenom'       => 'ENS',
+                'nom'          => 'El Mansouri',
+                'prenom'       => 'Karim',
                 'mot_de_passe' => Hash::make($adminPassword),
                 'statut'       => 'actif',
             ]
         );
 
-        if ($adminEcole->wasRecentlyCreated) {
-            $this->command->info("✅ Admin école créé");
-            $this->command->info("   📧 Email : admin@ens.ma");
-            $this->command->warn("   🔐 Mot de passe : {$adminPassword}");
-        }
-
-        // Étudiant de démo
-        $etudiantPassword = Str::random(12);
-        $etudiant = Utilisateur::withoutGlobalScopes()->firstOrCreate(
-            ['email' => 'etudiant.demo@ens.ma'],
+        // Étudiant test Sara Alami (ENS)
+        $saraPassword = env('DEMO_ETUDIANT_PASSWORD', 'Secret2026!');
+        $sara = Utilisateur::withoutGlobalScopes()->firstOrCreate(
+            ['email' => 'sara.alami@ens.ma'],
             [
                 'uuid'         => Str::uuid(),
                 'ecole_id'     => $ecole->id,
                 'role'         => 'etudiant',
-                'matricule'    => 'ENS2026001',
-                'nom'          => 'DÉMONSTRATION',
-                'prenom'       => 'Étudiant',
-                'mot_de_passe' => Hash::make($etudiantPassword),
+                'matricule'    => 'E2026-9901',
+                'nom'          => 'Alami',
+                'prenom'       => 'Sara',
+                'mot_de_passe' => Hash::make($saraPassword),
                 'statut'       => 'actif',
             ]
         );
 
-        if ($etudiant->wasRecentlyCreated) {
-            $this->command->info("✅ Étudiant de démo créé");
-            $this->command->info("   📧 Email : etudiant.demo@ens.ma");
-            $this->command->info("   🎓 Matricule : ENS2026001");
-            $this->command->warn("   🔐 Mot de passe : {$etudiantPassword}");
-
-            // Données académiques de l'étudiant
-            EtudiantDonnee::create([
-                'ecole_id'             => $ecole->id,
-                'matricule'            => 'ENS2026001',
-                'filiere'              => 'Informatique',
+        EtudiantDonnee::firstOrCreate(
+            ['ecole_id' => $ecole->id, 'matricule' => 'E2026-9901'],
+            [
+                'filiere'              => 'Génie Logiciel',
                 'niveau'               => 'Master 2',
                 'annee_universitaire'  => '2025-2026',
                 'attributs_dynamiques' => [
-                    'moyenne' => '16.5',
-                    'mention' => 'Très Bien',
-                    'session' => 'Juin 2026',
+                    'moyenne'           => '17.40',
+                    'mention'           => 'Très Bien',
+                    'session'           => 'Principale Juin 2026',
+                    'date_deliberation' => '30 Juin 2026',
+                    'rang'              => '1/42',
                 ],
-            ]);
-        }
+            ]
+        );
 
-        $this->command->info("\n✨ Données de démonstration créées avec succès !");
-        $this->command->warn("⚠️  Notez les mots de passe ci-dessus - ils ne seront pas réaffichés.");
+        // Modèle par défaut : Attestation de Réussite
+        \App\Models\ModeleDocument::firstOrCreate(
+            ['ecole_id' => $ecole->id, 'type_document' => 'attestation_reussite'],
+            [
+                'uuid'                => Str::uuid(),
+                'titre'               => 'Attestation de Réussite',
+                'description'         => 'Modèle certifiant la réussite académique.',
+                'contenu_html'        => '<div class="cert-container"><h1>Attestation de Réussite</h1><p>{nom} {prenom} - {matricule}</p><p>{filiere} - {niveau}</p>{qr_code}</div>',
+                'styles_css'          => 'body { font-family: sans-serif; }',
+                'actif'               => true,
+                'validation_requise'  => false,
+                'langue'              => 'fr',
+            ]
+        );
+
+        // Modèle par défaut : Certificat de Scolarité
+        \App\Models\ModeleDocument::firstOrCreate(
+            ['ecole_id' => $ecole->id, 'type_document' => 'certificat_scolarite'],
+            [
+                'uuid'                => Str::uuid(),
+                'titre'               => 'Certificat de Scolarité',
+                'description'         => 'Modèle certifiant la scolarité active.',
+                'contenu_html'        => '<div class="cert-container"><h1>Certificat de Scolarité</h1><p>{nom} {prenom} - {matricule}</p><p>{filiere} - {niveau}</p>{qr_code}</div>',
+                'styles_css'          => 'body { font-family: sans-serif; }',
+                'actif'               => true,
+                'validation_requise'  => true,
+                'langue'              => 'fr',
+            ]
+        );
+
+        $this->command->info("\n✨ Données de démonstration ENS initialisées avec succès !");
     }
 }
