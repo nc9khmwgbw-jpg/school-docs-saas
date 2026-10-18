@@ -108,4 +108,9 @@ class Utilisateur extends Authenticatable
     {
         return $this->hasMany(DemandeDocument::class, 'etudiant_id');
     }
+
+    public function resultats(): HasMany
+    {
+        return $this->hasMany(Resultat::class, 'etudiant_id');
+    }
 }

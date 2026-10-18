@@ -199,6 +199,100 @@ class DemoDataSeeder extends Seeder
             ]
         );
 
-        $this->command->info("✨ Données de démonstration et fixtures de test initialisées !");
+        ModeleDocument::firstOrCreate(
+            ['ecole_id' => $ecole->id, 'type_document' => 'releve_notes'],
+            [
+                'uuid'                => Str::uuid(),
+                'titre'               => 'Relevé de Notes Officiel',
+                'description'         => 'Relevé de notes officiel certifié avec détail des semestres et crédits ECTS.',
+                'contenu_html'        => '<div class="cert-container">
+    <table class="header-table">
+        <tr>
+            <td class="header-left">{logo}</td>
+            <td class="header-center">
+                <div class="republique">ROYAUME DU MAROC</div>
+                <div class="ministere">MINISTÈRE DE L\'ENSEIGNEMENT SUPÉRIEUR ET DE LA RECHERCHE SCIENTIFIQUE</div>
+                <div class="school-name">{nom_ecole}</div>
+                <div class="dept-name">Direction des Études et des Examens Académiques</div>
+            </td>
+            <td class="header-right">
+                <div class="academic-year">Année Universitaire<br/><strong>{annee_universitaire}</strong></div>
+            </td>
+        </tr>
+    </table>
+    <div class="header-divider"></div>
+    <div class="title-container">
+        <h1 class="doc-title">RELEVÉ DE NOTES OFFICIEL</h1>
+        <div class="doc-ref">Réf : TRANS/{annee_actuelle}/{matricule}</div>
+    </div>
+    <div class="body-content">
+        <table class="student-info-table">
+            <tr><td class="info-label">Nom et Prénom :</td><td class="info-value"><strong>{nom} {prenom}</strong></td></tr>
+            <tr><td class="info-label">Matricule académique :</td><td class="info-value"><strong>{matricule}</strong></td></tr>
+            <tr><td class="info-label">Filière d\'études :</td><td class="info-value"><strong>{filiere}</strong> ({niveau})</td></tr>
+            <tr><td class="info-label">Année universitaire :</td><td class="info-value"><strong>{annee_universitaire}</strong></td></tr>
+        </table>
+        {tableau_notes}
+    </div>
+    <table class="signatures-table">
+        <tr>
+            <td class="sig-col-left">
+                <div class="issue-date">Fait à {adresse_ecole}, le {date_du_jour}</div>
+                <div class="sig-role">Le Responsable des Délibérations</div>
+            </td>
+            <td class="sig-col-right">
+                <div class="sig-role">Le Directeur de l\'Établissement</div>
+                <table style="width:100%;margin-top:6px;border-collapse:collapse;">
+                    <tr>
+                        <td style="text-align:center;vertical-align:middle;width:50%;padding:0;">{signature}</td>
+                        <td style="text-align:center;vertical-align:middle;width:50%;padding:0;">{cachet}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <div class="anti-fraud-footer">{qr_code}</div>
+</div>',
+                'styles_css'          => 'body { font-family: "DejaVu Serif", serif; } .cert-container { border: 2px solid #000; padding: 20px; }',
+                'actif'               => true,
+                'validation_requise'  => true,
+                'langue'              => 'fr',
+            ]
+        );
+
+        // 7. Notes et Résultats Académiques Réels (Sara Alami - Master 2 Génie Logiciel)
+        $modulesSara = [
+            ['semestre' => 'Semestre 1', 'module' => 'Architecture des Logiciels & Design Patterns', 'note' => 18.00, 'coeff' => 6.0],
+            ['semestre' => 'Semestre 1', 'module' => 'Cryptographie Appliquée & Sécurité Réseau', 'note' => 17.50, 'coeff' => 6.0],
+            ['semestre' => 'Semestre 1', 'module' => 'Bases de Données Distribuées & Cloud NoSQL', 'note' => 16.50, 'coeff' => 6.0],
+            ['semestre' => 'Semestre 1', 'module' => 'Algorithmique Avancée & Complexité', 'note' => 15.50, 'coeff' => 6.0],
+            ['semestre' => 'Semestre 1', 'module' => 'Anglais Professionnel & Communication', 'note' => 17.00, 'coeff' => 6.0],
+            ['semestre' => 'Semestre 2', 'module' => 'DevSecOps & Orchestration Kubernetes', 'note' => 18.50, 'coeff' => 6.0],
+            ['semestre' => 'Semestre 2', 'module' => 'Intelligence Artificielle & Machine Learning', 'note' => 16.00, 'coeff' => 6.0],
+            ['semestre' => 'Semestre 2', 'module' => 'Ingénierie des Systèmes d\'Information', 'note' => 17.00, 'coeff' => 6.0],
+            ['semestre' => 'Semestre 2', 'module' => 'Audit de Code & Sécurité Applicative', 'note' => 19.00, 'coeff' => 6.0],
+            ['semestre' => 'Semestre 2', 'module' => 'Projet de Fin d\'Études Pédagogique', 'note' => 18.00, 'coeff' => 6.0],
+        ];
+
+        foreach ($modulesSara as $mod) {
+            \App\Models\Resultat::firstOrCreate(
+                [
+                    'ecole_id'        => $ecole->id,
+                    'etudiant_id'     => $sara->id,
+                    'intitule_module' => $mod['module'],
+                ],
+                [
+                    'note'                => $mod['note'],
+                    'note_max'            => 20.00,
+                    'coefficient'         => $mod['coeff'],
+                    'semestre'            => $mod['semestre'],
+                    'session'             => 'Principale',
+                    'annee_universitaire' => '2025-2026',
+                    'verrouille'          => false,
+                ]
+            );
+        }
+
+        $this->command->info("✨ Données de démonstration, modèles et résultats académiques initialisés !");
     }
 }

@@ -116,4 +116,85 @@ class EndToEndDocumentLifecycleTest extends TestCase
         $responseEtudiantDownload->assertStatus(200);
         $responseEtudiantDownload->assertHeader('content-type', 'application/pdf');
     }
+
+    /**
+     * Teste la génération d'un relevé de notes avec agrégation des vraies notes de la base de données
+     * et verrouillage automatique des résultats pour empêcher toute falsification ultérieure.
+     */
+    public function test_dynamic_academic_transcript_generation_with_database_grades(): void
+    {
+        Mail::fake();
+
+        $ecole = Ecole::where('code_unique', 'ENS-2026')->firstOrFail();
+        $etudiant = Utilisateur::withoutGlobalScopes()
+            ->where('ecole_id', $ecole->id)
+            ->where('role', 'etudiant')
+            ->where('email', 'sara.alami@ens.ma')
+            ->firstOrFail();
+
+        $adminEcole = Utilisateur::withoutGlobalScopes()
+            ->where('ecole_id', $ecole->id)
+            ->where('role', 'admin_ecole')
+            ->firstOrFail();
+
+        $modeleReleve = ModeleDocument::where('ecole_id', $ecole->id)
+            ->where('type_document', 'releve_notes')
+            ->firstOrFail();
+
+        // Vérifier que l'étudiant a des résultats académiques dans la table 'resultats'
+        $nbResultats = \App\Models\Resultat::where('ecole_id', $ecole->id)
+            ->where('etudiant_id', $etudiant->id)
+            ->count();
+        $this->assertGreaterThan(0, $nbResultats, "L'étudiant doit avoir des résultats académiques enregistrés.");
+
+        // L'étudiant demande son Relevé de Notes
+        $this->actingAs($etudiant);
+        $resDemande = $this->post(route('tenant.demandes.store', ['code_unique' => $ecole->code_unique]), [
+            'modele_id' => $modeleReleve->id,
+        ]);
+        $resDemande->assertRedirect(route('tenant.dashboard', ['code_unique' => $ecole->code_unique]));
+
+        $demande = DemandeDocument::where('etudiant_id', $etudiant->id)
+            ->where('modele_id', $modeleReleve->id)
+            ->latest('id')
+            ->firstOrFail();
+
+        // Si le modèle nécessite une validation, l'admin valide la demande
+        if ($modeleReleve->validation_requise && $demande->statut === DemandeDocument::STATUT_EN_ATTENTE) {
+            $this->actingAs($adminEcole);
+            $resValider = $this->post(route('admin_ecole.demandes.valider', ['id' => $demande->id]));
+            $resValider->assertSessionHas('success');
+            $demande->refresh();
+        }
+
+        // Exécution du job de génération
+        $templateEngine = app(TemplateEngineService::class);
+        $pdfGenerator   = app(PdfGeneratorService::class);
+        $job = new GenerateDocumentPdfJob($demande->id);
+        $job->handle($templateEngine, $pdfGenerator);
+
+        $demande->refresh();
+        $this->assertEquals(DemandeDocument::STATUT_GENERE, $demande->statut);
+
+        // Vérification de la création du document officiel
+        $doc = DocumentGenere::withoutGlobalScopes()
+            ->where('demande_id', $demande->id)
+            ->firstOrFail();
+
+        $this->assertTrue(Storage::disk('local')->exists($doc->chemin_fichier));
+        $this->assertGreaterThan(50000, $doc->taille_octets); // Un relevé complet fait > 50 Ko
+
+        // Vérification du verrouillage anti-fraude des notes
+        $notesNonVerrouillees = \App\Models\Resultat::where('ecole_id', $ecole->id)
+            ->where('etudiant_id', $etudiant->id)
+            ->where('verrouille', false)
+            ->count();
+        $this->assertEquals(0, $notesNonVerrouillees, "Toutes les notes utilisées doivent être verrouillées contre modification.");
+
+        // Vérification publique du relevé
+        auth()->logout();
+        $resVerif = $this->get(route('public.verifier', ['uuid' => $doc->uuid]));
+        $resVerif->assertStatus(200);
+        $resVerif->assertSee('Authentique &amp; Scellé', false);
+    }
 }

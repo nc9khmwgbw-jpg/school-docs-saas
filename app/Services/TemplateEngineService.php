@@ -80,6 +80,32 @@ class TemplateEngineService
             }
         }
 
+        // 3.5. Extraction et agrégation dynamique des notes réelles (table resultats)
+        $resultats = \App\Models\Resultat::where('ecole_id', $ecole->id)
+            ->where('etudiant_id', $etudiant->id)
+            ->orderBy('semestre')
+            ->orderBy('intitule_module')
+            ->get();
+
+        $tableData = $this->generateAcademicTable($resultats);
+
+        $variables['tableau_notes']     = $tableData['html'];
+        $variables['tableau_resultats'] = $tableData['html'];
+        $variables['total_credits']     = $tableData['total_credits'];
+        $variables['nombre_modules']    = (string) $tableData['nombre_modules'];
+        $variables['decision_jury']     = $tableData['decision_jury'];
+
+        if ($tableData['moyenne'] !== 'N/A') {
+            $variables['moyenne_calculee'] = $tableData['moyenne'];
+            $variables['mention_calculee'] = $tableData['mention'];
+            if (empty($variables['moyenne'])) {
+                $variables['moyenne'] = $tableData['moyenne'];
+            }
+            if (empty($variables['mention'])) {
+                $variables['mention'] = $tableData['mention'];
+            }
+        }
+
         // 4. Intégration du QR code officiel scannable et vérification numérique en Noir & Blanc
         if ($docUuid) {
             $verifyUrl = url('/verifier/' . $docUuid);
@@ -117,6 +143,20 @@ class TemplateEngineService
 
         // 5. ✅ SÉCURITÉ : Sanitization du HTML pour éviter XSS via templates malveillants
         $htmlContenu = HtmlSanitizerService::sanitize($modele->contenu_html);
+
+        // 5.1 Remplacement automatique du tableau des notes pour les relevés de notes
+        if ($modele->type_document === 'releve_notes' && !empty($tableData['html'])) {
+            if (!str_contains($htmlContenu, '{tableau_notes}') && !str_contains($htmlContenu, '{tableau_resultats}')) {
+                // Remplacement du tableau statique d'exemple par le tableau dynamique calculé
+                preg_match_all('/<table[^>]*>.*?<\/table>/is', $htmlContenu, $matches);
+                foreach ($matches[0] as $tableHtml) {
+                    if (str_contains($tableHtml, "Module d'") || (str_contains($tableHtml, 'Module') && str_contains($tableHtml, 'Note'))) {
+                        $htmlContenu = str_replace($tableHtml, '{tableau_notes}', $htmlContenu);
+                        break;
+                    }
+                }
+            }
+        }
         
         // 6. Remplacement des balises {variable} dans le contenu HTML
         foreach ($variables as $cle => $valeur) {
@@ -164,5 +204,121 @@ class TemplateEngineService
 </body>
 </html>
 HTML;
+    }
+
+    /**
+     * Génère dynamiquement le tableau académique officiel des modules et semestres
+     * avec calculs automatiques des moyennes pondérées et validation ECTS.
+     */
+    protected function generateAcademicTable(\Illuminate\Support\Collection $resultats): array
+    {
+        if ($resultats->isEmpty()) {
+            return [
+                'html'             => '',
+                'moyenne'          => 'N/A',
+                'mention'          => 'N/A',
+                'total_credits'    => '0 ECTS',
+                'decision_jury'    => 'N/A',
+                'nombre_modules'   => 0,
+            ];
+        }
+
+        $semestres = $resultats->groupBy(function ($item) {
+            return !empty($item->semestre) ? trim($item->semestre) : 'Semestre Unique';
+        });
+
+        $totalPondereGlobal = 0;
+        $totalCoeffGlobal = 0;
+        $totalModules = $resultats->count();
+
+        $rowsHtml = '';
+
+        foreach ($semestres as $semestreNom => $modules) {
+            $semestrePondere = 0;
+            $semestreCoeff = 0;
+
+            // En-tête de semestre
+            $rowsHtml .= '<tr style="background:#f4f4f4;font-weight:bold;">'
+                . '<td colspan="5" style="padding:6px 8px;border:1px solid #000000;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">'
+                . e($semestreNom)
+                . '</td></tr>';
+
+            foreach ($modules as $m) {
+                $note = (float) $m->note;
+                $noteMax = (float) ($m->note_max ?: 20);
+                $coeff = (float) ($m->coefficient ?: 1);
+
+                $noteSur20 = $noteMax > 0 ? ($note / $noteMax) * 20 : 0;
+                $semestrePondere += $noteSur20 * $coeff;
+                $semestreCoeff += $coeff;
+
+                $totalPondereGlobal += $noteSur20 * $coeff;
+                $totalCoeffGlobal += $coeff;
+
+                $estValide = $noteSur20 >= 10.0;
+                $decision = $estValide ? 'Validé' : 'Non Validé';
+
+                $rowsHtml .= '<tr>'
+                    . '<td style="padding:5px 8px;border:1px solid #000000;font-size:10.5px;">' . e($m->intitule_module) . '</td>'
+                    . '<td style="padding:5px 8px;text-align:center;border:1px solid #000000;font-size:10.5px;font-weight:bold;">' . number_format($note, 2, '.', '') . ' / ' . number_format($noteMax, 0) . '</td>'
+                    . '<td style="padding:5px 8px;text-align:center;border:1px solid #000000;font-size:10.5px;">' . number_format($coeff, 1, '.', '') . ' ECTS</td>'
+                    . '<td style="padding:5px 8px;text-align:center;border:1px solid #000000;font-size:10.5px;">' . e($m->session ?: 'Principale') . '</td>'
+                    . '<td style="padding:5px 8px;text-align:center;border:1px solid #000000;font-size:10.5px;font-weight:bold;">' . $decision . '</td>'
+                    . '</tr>';
+            }
+
+            // Sous-total du semestre
+            $moyenneSemestre = $semestreCoeff > 0 ? round($semestrePondere / $semestreCoeff, 2) : 0;
+            $semestreValide = $moyenneSemestre >= 10.0 ? 'Semestre Validé' : 'Non Validé';
+
+            $rowsHtml .= '<tr style="background:#fafafa;font-weight:bold;border-top:1.5px solid #000000;border-bottom:1.5px solid #000000;">'
+                . '<td style="padding:5px 8px;border:1px solid #000000;font-size:10.5px;">Moyenne ' . e($semestreNom) . '</td>'
+                . '<td style="padding:5px 8px;text-align:center;border:1px solid #000000;font-size:10.5px;">' . number_format($moyenneSemestre, 2, '.', '') . ' / 20</td>'
+                . '<td style="padding:5px 8px;text-align:center;border:1px solid #000000;font-size:10.5px;">' . number_format($semestreCoeff, 1, '.', '') . ' ECTS</td>'
+                . '<td colspan="2" style="padding:5px 8px;text-align:center;border:1px solid #000000;font-size:10.5px;">' . $semestreValide . '</td>'
+                . '</tr>';
+        }
+
+        // Bilan Général Global
+        $moyenneGenerale = $totalCoeffGlobal > 0 ? round($totalPondereGlobal / $totalCoeffGlobal, 2) : 0;
+        $mention = match (true) {
+            $moyenneGenerale >= 16.0 => 'Très Bien',
+            $moyenneGenerale >= 14.0 => 'Bien',
+            $moyenneGenerale >= 12.0 => 'Assez Bien',
+            $moyenneGenerale >= 10.0 => 'Passable',
+            default                  => 'Ajourné(e)'
+        };
+        $decisionJury = $moyenneGenerale >= 10.0 ? 'ADMIS(E)' : 'AJOURNÉ(E)';
+
+        $rowsHtml .= '<tr style="background:#eeeeee;font-weight:bold;border-top:2px solid #000000;border-bottom:2px solid #000000;">'
+            . '<td style="padding:7px 8px;border:1px solid #000000;font-size:11px;">BILAN ACADÉMIQUE GLOBAL &bull; Mention : ' . $mention . '</td>'
+            . '<td style="padding:7px 8px;text-align:center;border:1px solid #000000;font-size:11px;">' . number_format($moyenneGenerale, 2, '.', '') . ' / 20</td>'
+            . '<td style="padding:7px 8px;text-align:center;border:1px solid #000000;font-size:11px;">' . number_format($totalCoeffGlobal, 1, '.', '') . ' ECTS</td>'
+            . '<td colspan="2" style="padding:7px 8px;text-align:center;border:1px solid #000000;font-size:11px;letter-spacing:0.5px;">' . $decisionJury . '</td>'
+            . '</tr>';
+
+        $fullTable = '<table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:11px;">'
+            . '<thead>'
+            . '<tr style="background:#e5e5e5;border-top:1.5px solid #000000;border-bottom:1.5px solid #000000;">'
+            . '<th style="padding:6px 8px;text-align:left;border:1px solid #000000;">Module d\'Enseignement</th>'
+            . '<th style="padding:6px 8px;text-align:center;border:1px solid #000000;width:80px;">Note / 20</th>'
+            . '<th style="padding:6px 8px;text-align:center;border:1px solid #000000;width:75px;">Crédits ECTS</th>'
+            . '<th style="padding:6px 8px;text-align:center;border:1px solid #000000;width:75px;">Session</th>'
+            . '<th style="padding:6px 8px;text-align:center;border:1px solid #000000;width:85px;">Résultat</th>'
+            . '</tr>'
+            . '</thead>'
+            . '<tbody>'
+            . $rowsHtml
+            . '</tbody>'
+            . '</table>';
+
+        return [
+            'html'             => $fullTable,
+            'moyenne'          => number_format($moyenneGenerale, 2, '.', ''),
+            'mention'          => $mention,
+            'total_credits'    => number_format($totalCoeffGlobal, 1, '.', '') . ' ECTS',
+            'decision_jury'    => $decisionJury,
+            'nombre_modules'   => $totalModules,
+        ];
     }
 }
