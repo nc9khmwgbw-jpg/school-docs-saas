@@ -58,6 +58,37 @@ class DemoDataSeeder extends Seeder
             ]
         );
 
+        // 2.1 Admin POLY-2026
+        Utilisateur::withoutGlobalScopes()->firstOrCreate(
+            ['email' => 'contact@poly.ma'],
+            [
+                'uuid'         => Str::uuid(),
+                'ecole_id'     => $poly->id,
+                'role'         => 'admin_ecole',
+                'matricule'    => null,
+                'nom'          => 'Benjelloun',
+                'prenom'       => 'Tariq',
+                'mot_de_passe' => Hash::make('Secret2026!'),
+                'statut'       => 'actif',
+            ]
+        );
+
+        // 2.2 Étudiant POLY-2026 (P2026-7701)
+        Utilisateur::withoutGlobalScopes()->firstOrCreate(
+            ['matricule' => 'P2026-7701'],
+            [
+                'uuid'         => Str::uuid(),
+                'ecole_id'     => $poly->id,
+                'role'         => 'etudiant',
+                'nom'          => 'Benali',
+                'prenom'       => 'Yassine',
+                'email'        => 'yassine.benali@poly.ma',
+                'mot_de_passe' => Hash::make('Secret2026!'),
+                'photo_data'   => $placeholderJpg,
+                'statut'       => 'actif',
+            ]
+        );
+
         // 3. Admin ENS
         $adminPassword = env('DEMO_ADMIN_PASSWORD', 'Secret2026!');
         $adminEcole = Utilisateur::withoutGlobalScopes()->firstOrCreate(
