@@ -312,7 +312,13 @@ class SuperAdminController extends Controller
             ]);
 
             // Provisionnement immédiat des modèles de documents clés en main
-            $this->seedModelesParDefaut($ecole);
+            $previousTenant = \App\Scopes\TenantScope::getTenantId();
+            \App\Scopes\TenantScope::setTenantId($ecole->id);
+            try {
+                $this->seedModelesParDefaut($ecole);
+            } finally {
+                \App\Scopes\TenantScope::setTenantId($previousTenant);
+            }
 
             DB::commit();
 
@@ -380,50 +386,38 @@ class SuperAdminController extends Controller
      */
     private function seedModelesParDefaut(Ecole $ecole): void
     {
-        $primaryColor = $ecole->couleur_primaire ?: '#0b3b2a';
+        $css = <<<CSS
+body { font-family: "DejaVu Serif", Georgia, "Times New Roman", serif; color: #000000; margin: 0; padding: 0; }
+.cert-container { border: 3px double #000000; padding: 24px 28px; background-color: #ffffff; min-height: 880px; position: relative; }
+.header-table { width: 100%; margin-bottom: 10px; border-collapse: collapse; }
+.header-left { width: 22%; vertical-align: middle; text-align: left; }
+.header-center { width: 56%; vertical-align: middle; text-align: center; }
+.header-right { width: 22%; vertical-align: middle; text-align: right; font-size: 10px; color: #000000; }
+.republique { font-size: 11px; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; }
+.ministere { font-size: 8px; letter-spacing: 0.5px; margin-top: 2px; text-transform: uppercase; }
+.school-name { font-size: 14.5px; font-weight: bold; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.8px; }
+.dept-name { font-size: 9.5px; font-style: italic; margin-top: 2px; }
+.header-divider { border-top: 2px solid #000000; border-bottom: 1px solid #000000; height: 3px; margin: 8px 0 16px 0; }
+.title-container { text-align: center; margin-bottom: 18px; }
+.doc-title { font-size: 20px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 3px 0; color: #000000; }
+.doc-ref { font-size: 9.5px; font-family: "DejaVu Sans Mono", monospace; letter-spacing: 0.5px; }
+.body-content { font-size: 13px; line-height: 1.65; margin-bottom: 16px; }
+.intro-paragraph { margin-bottom: 12px; text-align: justify; }
+.student-info-table { width: 92%; margin: 12px auto 16px auto; border-collapse: collapse; }
+.student-info-table td { padding: 5px 8px; font-size: 12.5px; vertical-align: top; }
+.info-label { width: 38%; font-weight: normal; color: #222222; border-bottom: 1px dotted #888888; }
+.info-value { width: 62%; border-bottom: 1px dotted #888888; }
+.status-paragraph { margin-bottom: 12px; text-align: justify; text-indent: 20px; }
+.closing-paragraph { margin-bottom: 18px; text-align: justify; text-indent: 20px; }
+.signatures-table { width: 100%; margin-top: 10px; border-collapse: collapse; }
+.sig-col-left { width: 50%; vertical-align: top; text-align: left; font-size: 11px; }
+.sig-col-right { width: 50%; vertical-align: top; text-align: center; font-size: 11px; }
+.sig-role { font-weight: bold; margin-bottom: 3px; }
+.sig-sub { font-size: 10px; font-style: italic; }
+.anti-fraud-footer { margin-top: 12px; }
+CSS;
 
-        // 1. Attestation de Réussite (instantanée)
-        ModeleDocument::create([
-            'uuid'               => (string) Str::uuid(),
-            'ecole_id'           => $ecole->id,
-            'titre'              => 'Attestation de Réussite',
-            'type_document'      => 'attestation_reussite',
-            'description'        => 'Modèle certifiant l\'admission et la validation de l\'année universitaire.',
-            'contenu_html'       => '<div class="cert-container">
-    <div class="header">
-        <h2>{nom_ecole}</h2>
-        <p>Direction des Affaires Pédagogiques &amp; Scolarité</p>
-    </div>
-    <hr class="separator"/>
-    <h1 class="title">ATTESTATION DE RÉUSSITE</h1>
-    <div class="body-text">
-        <p>La Direction de l\'établissement <strong>{nom_ecole}</strong> atteste par la présente que :</p>
-        <p class="student-name">L\'étudiant(e) : <strong>{prenom} {nom}</strong></p>
-        <p>Numéro de matricule : <strong>{matricule}</strong></p>
-        <p>Inscrit(e) en : <strong>{filiere} — {niveau}</strong></p>
-        <p>A validé avec succès l\'année académique <strong>{annee_universitaire}</strong> avec la mention <strong>{mention}</strong> (Moyenne : <strong>{moyenne}/20</strong>).</p>
-        <p>La présente attestation lui est délivrée pour servir et valoir ce que de droit.</p>
-    </div>
-    <div class="footer">
-        <div class="date-issue">Fait le {date_du_jour}</div>
-        <div class="signature">Signature &amp; Sceau Officiel</div>
-    </div>
-    {qr_code}
-</div>',
-            'styles_css'         => 'body { font-family: "DejaVu Sans", sans-serif; color: #1f2937; margin: 30px; }
-.cert-container { border: 3px double ' . $primaryColor . '; padding: 40px; }
-.header { text-align: center; margin-bottom: 25px; }
-.separator { border: 0; border-top: 1px solid #d1d5db; margin: 20px 0; }
-.title { text-align: center; font-size: 24px; color: ' . $primaryColor . '; letter-spacing: 2px; margin: 30px 0; }
-.student-name { font-size: 18px; margin: 15px 0; }
-.body-text p { font-size: 14px; line-height: 1.8; }
-.footer { margin-top: 50px; display: flex; justify-content: space-between; }',
-            'actif'              => true,
-            'validation_requise' => false,
-            'langue'             => 'fr',
-        ]);
-
-        // 2. Certificat de Scolarité (avec validation requise)
+        // 1. Certificat de Scolarité
         ModeleDocument::create([
             'uuid'               => (string) Str::uuid(),
             'ecole_id'           => $ecole->id,
@@ -431,32 +425,249 @@ class SuperAdminController extends Controller
             'type_document'      => 'certificat_scolarite',
             'description'        => 'Certifie l\'inscription régulière pour l\'année académique en cours.',
             'contenu_html'       => '<div class="cert-container">
-    <div class="header">
-        <h2>{nom_ecole}</h2>
-        <p>Bureau des Inscriptions &amp; Scolarité — {annee_actuelle}</p>
+    <table class="header-table">
+        <tr>
+            <td class="header-left">{logo}</td>
+            <td class="header-center">
+                <div class="republique">ROYAUME DU MAROC</div>
+                <div class="ministere">MINISTÈRE DE L\'ENSEIGNEMENT SUPÉRIEUR ET DE LA RECHERCHE SCIENTIFIQUE</div>
+                <div class="school-name">{nom_ecole}</div>
+                <div class="dept-name">Direction des Études et des Affaires Académiques</div>
+            </td>
+            <td class="header-right">
+                <div class="academic-year">Année Universitaire<br/><strong>{annee_universitaire}</strong></div>
+            </td>
+        </tr>
+    </table>
+    <div class="header-divider"></div>
+    <div class="title-container">
+        <h1 class="doc-title">CERTIFICAT DE SCOLARITÉ</h1>
+        <div class="doc-ref">Réf : SCOL/{annee_actuelle}/{matricule}</div>
     </div>
-    <hr class="separator"/>
-    <h1 class="title">CERTIFICAT DE SCOLARITÉ</h1>
-    <div class="body-text">
-        <p>Je soussigné, Directeur de l\'établissement <strong>{nom_ecole}</strong>, certifie que :</p>
-        <p class="student-name"><strong>{prenom} {nom}</strong> (Matricule : <strong>{matricule}</strong>)</p>
-        <p>est régulièrement inscrit(e) au titre de l\'année <strong>{annee_universitaire}</strong></p>
-        <p>en cursus : <strong>{filiere} — {niveau}</strong>.</p>
-        <p>Le présent certificat est délivré à l\'intéressé(e) pour faire valoir ce que de droit.</p>
+    <div class="body-content">
+        <p class="intro-paragraph">Le Directeur de l\'établissement <strong>{nom_ecole}</strong>, certifie par la présente que :</p>
+        <table class="student-info-table">
+            <tr><td class="info-label">Nom et Prénom :</td><td class="info-value"><strong>{nom} {prenom}</strong></td></tr>
+            <tr><td class="info-label">Matricule académique :</td><td class="info-value"><strong>{matricule}</strong></td></tr>
+            <tr><td class="info-label">Filière d\'études :</td><td class="info-value"><strong>{filiere}</strong></td></tr>
+            <tr><td class="info-label">Cycle &amp; Niveau :</td><td class="info-value"><strong>{niveau}</strong></td></tr>
+            <tr><td class="info-label">Année universitaire :</td><td class="info-value"><strong>{annee_universitaire}</strong></td></tr>
+        </table>
+        <p class="status-paragraph">Est régulièrement inscrit(e) au sein de notre établissement pour l\'année universitaire en cours et poursuit son cursus conformément aux dispositions et règlements pédagogiques en vigueur.</p>
+        <p class="closing-paragraph">Le présent certificat lui est délivré sur sa demande pour servir et valoir ce que de droit auprès des administrations et organismes compétents.</p>
     </div>
-    <div class="footer">
-        <div class="date-issue">Le {date_du_jour}</div>
-        <div class="signature">Le Directeur des Études</div>
-    </div>
-    {qr_code}
+    <table class="signatures-table">
+        <tr>
+            <td class="sig-col-left">
+                <div class="issue-date">Fait à {adresse_ecole}, le {date_du_jour}</div>
+                <div style="margin-top:10px;"><div class="sig-role">Pour la Direction des Études</div><div class="sig-sub">Le Secrétariat Académique</div></div>
+            </td>
+            <td class="sig-col-right">
+                <div class="sig-role">Le Directeur de l\'Établissement</div>
+                <table style="width:100%;margin-top:6px;border-collapse:collapse;">
+                    <tr>
+                        <td style="text-align:center;vertical-align:middle;width:50%;padding:0;">{signature}</td>
+                        <td style="text-align:center;vertical-align:middle;width:50%;padding:0;">{cachet}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <div class="anti-fraud-footer">{qr_code}</div>
 </div>',
-            'styles_css'         => 'body { font-family: "DejaVu Sans", sans-serif; color: #1f2937; margin: 30px; }
-.cert-container { border: 2px solid ' . $primaryColor . '; padding: 35px; }
-.header { text-align: center; margin-bottom: 20px; }
-.separator { border: 0; border-top: 1px solid #d1d5db; margin: 20px 0; }
-.title { text-align: center; font-size: 22px; color: ' . $primaryColor . '; margin: 25px 0; }
-.body-text p { font-size: 14px; line-height: 2; }
-.footer { margin-top: 50px; display: flex; justify-content: space-between; }',
+            'styles_css'         => $css,
+            'actif'              => true,
+            'validation_requise' => true,
+            'langue'             => 'fr',
+        ]);
+
+        // 2. Attestation de Réussite
+        ModeleDocument::create([
+            'uuid'               => (string) Str::uuid(),
+            'ecole_id'           => $ecole->id,
+            'titre'              => 'Attestation de Réussite',
+            'type_document'      => 'attestation_reussite',
+            'description'        => 'Modèle certifiant l\'admission et la validation du cycle académique.',
+            'contenu_html'       => '<div class="cert-container">
+    <table class="header-table">
+        <tr>
+            <td class="header-left">{logo}</td>
+            <td class="header-center">
+                <div class="republique">ROYAUME DU MAROC</div>
+                <div class="ministere">MINISTÈRE DE L\'ENSEIGNEMENT SUPÉRIEUR ET DE LA RECHERCHE SCIENTIFIQUE</div>
+                <div class="school-name">{nom_ecole}</div>
+                <div class="dept-name">Jury Académique d\'Évaluation &amp; Délibération</div>
+            </td>
+            <td class="header-right">
+                <div class="academic-year">Session Pédagogique<br/><strong>Juin {annee_actuelle}</strong></div>
+            </td>
+        </tr>
+    </table>
+    <div class="header-divider"></div>
+    <div class="title-container">
+        <h1 class="doc-title">ATTESTATION DE RÉUSSITE</h1>
+        <div class="doc-ref">Réf : REUSS/{annee_actuelle}/{matricule}</div>
+    </div>
+    <div class="body-content">
+        <p class="intro-paragraph">Le Président du Jury et Directeur de l\'établissement <strong>{nom_ecole}</strong>, atteste par la présente que :</p>
+        <table class="student-info-table">
+            <tr><td class="info-label">Nom et Prénom :</td><td class="info-value"><strong>{nom} {prenom}</strong></td></tr>
+            <tr><td class="info-label">Matricule académique :</td><td class="info-value"><strong>{matricule}</strong></td></tr>
+            <tr><td class="info-label">Filière d\'études :</td><td class="info-value"><strong>{filiere}</strong></td></tr>
+            <tr><td class="info-label">Cycle &amp; Niveau :</td><td class="info-value"><strong>{niveau}</strong></td></tr>
+            <tr><td class="info-label">Année universitaire :</td><td class="info-value"><strong>{annee_universitaire}</strong></td></tr>
+            <tr><td class="info-label">Décision du Jury :</td><td class="info-value"><strong>ADMIS(E) {mention}</strong></td></tr>
+        </table>
+        <p class="status-paragraph">A satisfait aux examens de fin d\'études et aux exigences pédagogiques requises pour la validation intégrale des modules et des crédits de la filière.</p>
+        <p class="closing-paragraph">La présente attestation lui est délivrée pour servir et valoir ce que de droit.</p>
+    </div>
+    <table class="signatures-table">
+        <tr>
+            <td class="sig-col-left">
+                <div class="issue-date">Fait à {adresse_ecole}, le {date_du_jour}</div>
+                <div class="sig-role">Le Président du Jury</div>
+            </td>
+            <td class="sig-col-right">
+                <div class="sig-role">Le Directeur de l\'Établissement</div>
+                <table style="width:100%;margin-top:6px;border-collapse:collapse;">
+                    <tr>
+                        <td style="text-align:center;vertical-align:middle;width:50%;padding:0;">{signature}</td>
+                        <td style="text-align:center;vertical-align:middle;width:50%;padding:0;">{cachet}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <div class="anti-fraud-footer">{qr_code}</div>
+</div>',
+            'styles_css'         => $css,
+            'actif'              => true,
+            'validation_requise' => false,
+            'langue'             => 'fr',
+        ]);
+
+        // 3. Attestation d'Inscription
+        ModeleDocument::create([
+            'uuid'               => (string) Str::uuid(),
+            'ecole_id'           => $ecole->id,
+            'titre'              => 'Attestation d\'Inscription',
+            'type_document'      => 'certificat_scolarite',
+            'description'        => 'Atteste de l\'inscription administrative formelle au début de l\'année universitaire.',
+            'contenu_html'       => '<div class="cert-container">
+    <table class="header-table">
+        <tr>
+            <td class="header-left">{logo}</td>
+            <td class="header-center">
+                <div class="republique">ROYAUME DU MAROC</div>
+                <div class="ministere">MINISTÈRE DE L\'ENSEIGNEMENT SUPÉRIEUR ET DE LA RECHERCHE SCIENTIFIQUE</div>
+                <div class="school-name">{nom_ecole}</div>
+                <div class="dept-name">Service Central des Inscriptions &amp; Admissions</div>
+            </td>
+            <td class="header-right">
+                <div class="academic-year">Rentrée Académique<br/><strong>{annee_universitaire}</strong></div>
+            </td>
+        </tr>
+    </table>
+    <div class="header-divider"></div>
+    <div class="title-container">
+        <h1 class="doc-title">ATTESTATION D\'INSCRIPTION</h1>
+        <div class="doc-ref">Réf : INSC/{annee_actuelle}/{matricule}</div>
+    </div>
+    <div class="body-content">
+        <p class="intro-paragraph">Le Service des Inscriptions de l\'établissement <strong>{nom_ecole}</strong> certifie que :</p>
+        <table class="student-info-table">
+            <tr><td class="info-label">Nom et Prénom :</td><td class="info-value"><strong>{nom} {prenom}</strong></td></tr>
+            <tr><td class="info-label">Matricule académique :</td><td class="info-value"><strong>{matricule}</strong></td></tr>
+            <tr><td class="info-label">Filière d\'études :</td><td class="info-value"><strong>{filiere}</strong></td></tr>
+            <tr><td class="info-label">Cycle &amp; Niveau :</td><td class="info-value"><strong>{niveau}</strong></td></tr>
+            <tr><td class="info-label">Année universitaire :</td><td class="info-value"><strong>{annee_universitaire}</strong></td></tr>
+        </table>
+        <p class="status-paragraph">L\'étudiant(e) susmentionné(e) a accompli l\'ensemble des formalités administratives requises et est formellement inscrit(e) sur les registres officiels de l\'établissement.</p>
+        <p class="closing-paragraph">Cette attestation est délivrée pour faire valoir auprès des organismes et administrations concernés.</p>
+    </div>
+    <table class="signatures-table">
+        <tr>
+            <td class="sig-col-left">
+                <div class="issue-date">Fait à {adresse_ecole}, le {date_du_jour}</div>
+                <div class="sig-role">Le Service des Admissions</div>
+            </td>
+            <td class="sig-col-right">
+                <div class="sig-role">Le Directeur de l\'Établissement</div>
+                <table style="width:100%;margin-top:6px;border-collapse:collapse;">
+                    <tr>
+                        <td style="text-align:center;vertical-align:middle;width:50%;padding:0;">{signature}</td>
+                        <td style="text-align:center;vertical-align:middle;width:50%;padding:0;">{cachet}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <div class="anti-fraud-footer">{qr_code}</div>
+</div>',
+            'styles_css'         => $css,
+            'actif'              => true,
+            'validation_requise' => false,
+            'langue'             => 'fr',
+        ]);
+
+        // 4. Convention & Attestation de Stage
+        ModeleDocument::create([
+            'uuid'               => (string) Str::uuid(),
+            'ecole_id'           => $ecole->id,
+            'titre'              => 'Convention & Attestation de Stage',
+            'type_document'      => 'convention_stage',
+            'description'        => 'Document conventionné autorisant l\'étudiant à effectuer son stage professionnel en entreprise.',
+            'contenu_html'       => '<div class="cert-container">
+    <table class="header-table">
+        <tr>
+            <td class="header-left">{logo}</td>
+            <td class="header-center">
+                <div class="republique">ROYAUME DU MAROC</div>
+                <div class="ministere">MINISTÈRE DE L\'ENSEIGNEMENT SUPÉRIEUR ET DE LA RECHERCHE SCIENTIFIQUE</div>
+                <div class="school-name">{nom_ecole}</div>
+                <div class="dept-name">Direction des Relations Entreprises &amp; Insertion Professionnelle</div>
+            </td>
+            <td class="header-right">
+                <div class="academic-year">Convention<br/><strong>{annee_universitaire}</strong></div>
+            </td>
+        </tr>
+    </table>
+    <div class="header-divider"></div>
+    <div class="title-container">
+        <h1 class="doc-title">CONVENTION &amp; ATTESTATION DE STAGE</h1>
+        <div class="doc-ref">Réf : STAGE/{annee_actuelle}/{matricule}</div>
+    </div>
+    <div class="body-content">
+        <p class="intro-paragraph">La Direction de l\'établissement <strong>{nom_ecole}</strong> certifie par la présente que :</p>
+        <table class="student-info-table">
+            <tr><td class="info-label">Nom et Prénom :</td><td class="info-value"><strong>{nom} {prenom}</strong></td></tr>
+            <tr><td class="info-label">Matricule académique :</td><td class="info-value"><strong>{matricule}</strong></td></tr>
+            <tr><td class="info-label">Filière d\'études :</td><td class="info-value"><strong>{filiere}</strong> ({niveau})</td></tr>
+            <tr><td class="info-label">Année universitaire :</td><td class="info-value"><strong>{annee_universitaire}</strong></td></tr>
+        </table>
+        <p class="status-paragraph">Est autorisé(e) à effectuer son stage d\'immersion professionnelle ou stage de fin d\'études en entreprise, conformément au cursus pédagogique prescrit. L\'étudiant(e) demeure sous statut d\'assurance scolaire et académique pendant toute la durée conventionnelle du stage.</p>
+        <p class="closing-paragraph">La présente convention et attestation est délivrée pour valoir ce que de droit auprès de l\'organisme d\'accueil.</p>
+    </div>
+    <table class="signatures-table">
+        <tr>
+            <td class="sig-col-left">
+                <div class="issue-date">Fait à {adresse_ecole}, le {date_du_jour}</div>
+                <div class="sig-role">Le Responsable des Stages</div>
+            </td>
+            <td class="sig-col-right">
+                <div class="sig-role">Le Directeur de l\'Établissement</div>
+                <table style="width:100%;margin-top:6px;border-collapse:collapse;">
+                    <tr>
+                        <td style="text-align:center;vertical-align:middle;width:50%;padding:0;">{signature}</td>
+                        <td style="text-align:center;vertical-align:middle;width:50%;padding:0;">{cachet}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <div class="anti-fraud-footer">{qr_code}</div>
+</div>',
+            'styles_css'         => $css,
             'actif'              => true,
             'validation_requise' => true,
             'langue'             => 'fr',

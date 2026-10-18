@@ -113,12 +113,26 @@ class GenerateDocumentPdfJob implements ShouldQueue
 
             Log::info("GenerateDocumentPdfJob: Document généré avec succès pour demande #{$demande->id} (École #{$ecole->id}).");
 
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
+            // Si le document a déjà été inséré en parallèle par un autre worker, considérer le job comme réussi
+            $docExistant = DocumentGenere::withoutGlobalScopes()
+                ->where('demande_id', $demande->id)
+                ->first();
+
+            if ($docExistant) {
+                $demande->update([
+                    'statut'   => DemandeDocument::STATUT_GENERE,
+                    'remarque' => 'Document généré avec succès.'
+                ]);
+                Log::info("GenerateDocumentPdfJob: Concurrence résolue, document déjà généré pour demande #{$demande->id}.");
+                return;
+            }
+
             Log::error("GenerateDocumentPdfJob Erreur sur demande #{$this->demandeId}: " . $e->getMessage());
 
             $demande->update([
                 'statut'   => DemandeDocument::STATUT_EN_TRAITEMENT,
-                'remarque' => 'Tentative échouée : ' . $e->getMessage()
+                'remarque' => mb_substr('Tentative échouée : ' . $e->getMessage(), 0, 490)
             ]);
 
             throw $e; // Permet à Supervisor de retenter (jusqu'à $tries = 3)
@@ -140,7 +154,7 @@ class GenerateDocumentPdfJob implements ShouldQueue
             $demande->update([
                 'statut'      => DemandeDocument::STATUT_REFUSE,
                 'motif_refus' => 'Incident technique lors de la génération PDF. Veuillez renouveler votre demande.',
-                'remarque'    => 'Échec définitif worker : ' . $exception->getMessage(),
+                'remarque'    => mb_substr('Échec définitif worker : ' . $exception->getMessage(), 0, 490),
             ]);
         }
     }
