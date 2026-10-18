@@ -1,5 +1,6 @@
 # Plateforme SaaS Universelle de Documents Scolaires Sécurisés (DocScolaire SaaS v2.0)
 
+[![CI](https://github.com/nc9khmwgbw-jpg/school-docs-saas/actions/workflows/ci.yml/badge.svg)](https://github.com/nc9khmwgbw-jpg/school-docs-saas/actions/workflows/ci.yml)
 [![Statut](https://img.shields.io/badge/Statut-Pr%C3%AAt_%C3%A0_Livrer-34d399.svg)](#)
 [![Multi-Tenant](https://img.shields.io/badge/Architecture-Multi--Tenant_Isol%C3%A9-2563eb.svg)](#)
 [![PHP](https://img.shields.io/badge/PHP-8.3_FPM-7c3aed.svg)](#)
