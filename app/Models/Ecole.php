@@ -39,19 +39,20 @@ class Ecole extends Model
 
     /**
      * Data URI ou URL directe du logo officiel de l'établissement.
+     * Priorise le stockage public sur disque avec mise en cache navigateur Nginx.
      */
     public function getLogoUrlAttribute(): string
     {
+        if (!empty($this->logo_path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->logo_path)) {
+            return asset('storage/' . $this->logo_path);
+        }
+
         if (!empty($this->logo_data)) {
             return $this->logo_data;
         }
 
         if (!empty($this->logo_blob)) {
             return 'data:image/png;base64,' . base64_encode($this->logo_blob);
-        }
-
-        if (!empty($this->logo_path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->logo_path)) {
-            return asset('storage/' . $this->logo_path);
         }
 
         return '';

@@ -40,19 +40,20 @@ class Utilisateur extends Authenticatable
 
     /**
      * URL directe ou Data URI de la photo étudiante.
+     * Priorise le stockage public sur disque avec mise en cache navigateur Nginx (évite le payload HTML de 14 Mo).
      */
     public function getPhotoUrlAttribute(): string
     {
+        if (!empty($this->photo_path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->photo_path)) {
+            return asset('storage/' . $this->photo_path);
+        }
+
         if (!empty($this->photo_data)) {
             return $this->photo_data;
         }
 
         if (!empty($this->photo_blob)) {
             return 'data:image/jpeg;base64,' . base64_encode($this->photo_blob);
-        }
-
-        if (!empty($this->photo_path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->photo_path)) {
-            return asset('storage/' . $this->photo_path);
         }
 
         // SVG Avatar haute définition par défaut avec initiales

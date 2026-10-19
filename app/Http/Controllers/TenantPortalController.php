@@ -526,6 +526,18 @@ class TenantPortalController extends Controller
             ->where('actif', true)
             ->firstOrFail();
 
+        // 🛡️ ANTI-SPAM & ANTI-DOUBLONS : Empêcher les commandes en double tant que la précédente est en cours
+        $demandeEnCours = DemandeDocument::where('ecole_id', $ecole->id)
+            ->where('etudiant_id', $etudiant->id)
+            ->where('modele_id', $modele->id)
+            ->whereIn('statut', [DemandeDocument::STATUT_EN_ATTENTE, DemandeDocument::STATUT_EN_TRAITEMENT])
+            ->first();
+
+        if ($demandeEnCours) {
+            return redirect()->route('tenant.dashboard', ['code_unique' => $code_unique])
+                ->withErrors(['demande' => "Une demande pour « {$modele->titre} » est déjà en cours de traitement par l'administration."]);
+        }
+
         $demande = DemandeDocument::create([
             'ecole_id'    => $ecole->id,
             'etudiant_id' => $etudiant->id,

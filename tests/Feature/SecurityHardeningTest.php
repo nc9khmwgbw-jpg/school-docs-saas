@@ -148,5 +148,44 @@ class SecurityHardeningTest extends TestCase
         Utilisateur::withoutGlobalScopes()->where('ecole_id', $ecole->id)->delete();
         $ecole->delete();
     }
+
+    /**
+     * Teste que l'anti-spam empêche un étudiant de soumettre plusieurs fois la même demande en cours.
+     */
+    public function test_anti_spam_prevents_duplicate_pending_demands(): void
+    {
+        $etudiant = Utilisateur::withoutGlobalScopes()->where('matricule', 'E2026-9901')->firstOrFail();
+        $ecole = $etudiant->ecole;
+        $modele = \App\Models\ModeleDocument::withoutGlobalScopes()
+            ->where('ecole_id', $ecole->id)
+            ->where('actif', true)
+            ->firstOrFail();
+
+        // Nettoyer toute éventuelle demande préexistante en attente
+        \App\Models\DemandeDocument::where('etudiant_id', $etudiant->id)
+            ->where('modele_id', $modele->id)
+            ->whereIn('statut', ['en_attente', 'en_traitement'])
+            ->delete();
+
+        // 1. Première demande : acceptée
+        $response1 = $this->actingAs($etudiant)->post(route('tenant.demandes.store', ['code_unique' => $ecole->code_unique]), [
+            'modele_id' => $modele->id,
+        ]);
+        $response1->assertRedirect(route('tenant.dashboard', ['code_unique' => $ecole->code_unique]));
+        $response1->assertSessionHas('success');
+
+        // 2. Deuxième demande identique immédiate : bloquée par l'anti-spam
+        $response2 = $this->actingAs($etudiant)->post(route('tenant.demandes.store', ['code_unique' => $ecole->code_unique]), [
+            'modele_id' => $modele->id,
+        ]);
+        $response2->assertRedirect(route('tenant.dashboard', ['code_unique' => $ecole->code_unique]));
+        $response2->assertSessionHasErrors('demande');
+
+        // Nettoyage de la demande créée
+        \App\Models\DemandeDocument::where('etudiant_id', $etudiant->id)
+            ->where('modele_id', $modele->id)
+            ->where('statut', 'en_attente')
+            ->delete();
+    }
 }
 

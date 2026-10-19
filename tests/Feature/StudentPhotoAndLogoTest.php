@@ -23,7 +23,10 @@ class StudentPhotoAndLogoTest extends TestCase
         $this->assertNotNull($etudiant, "L'étudiant E2026-8888 doit exister");
         $this->assertTrue($etudiant->hasPhoto(), "L'étudiant doit avoir une photo configurée");
         $this->assertNotEmpty($etudiant->photo_url, "L'URL de la photo ne doit pas être vide");
-        $this->assertStringStartsWith('data:image/', $etudiant->photo_url, "La photo est scellée sous forme de Data URI en BDD");
+        $this->assertTrue(
+            str_starts_with($etudiant->photo_url, 'http') || str_starts_with($etudiant->photo_url, 'data:image/') || str_starts_with($etudiant->photo_url, '/storage'),
+            "La photo doit être servie via une URL publique optimisée ou Data URI"
+        );
     }
 
     public function test_ecole_has_logo_in_database()
@@ -32,7 +35,10 @@ class StudentPhotoAndLogoTest extends TestCase
 
         $this->assertNotNull($ecole, "L'école ENS-2026 doit exister");
         $this->assertNotEmpty($ecole->logo_url, "Le logo_url de l'école ne doit pas être vide");
-        $this->assertStringStartsWith('data:image/', $ecole->logo_url, "Le logo est stocké en mode image directe en BDD");
+        $this->assertTrue(
+            str_starts_with($ecole->logo_url, 'http') || str_starts_with($ecole->logo_url, 'data:image/') || str_starts_with($ecole->logo_url, '/storage'),
+            "Le logo doit être accessible via URL publique optimisée ou Data URI"
+        );
     }
 
     public function test_dashboard_renders_student_photo_and_school_logo()
