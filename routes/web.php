@@ -101,9 +101,13 @@ Route::group(['prefix' => 'portal/{code_unique}', 'middleware' => ['web', 'ident
 
     // Réinitialisation de mot de passe (Essentiel)
     Route::get('/mot-de-passe/oublie', [PasswordResetController::class, 'showForgotForm'])->name('tenant.password.forgot');
-    Route::post('/mot-de-passe/oublie', [PasswordResetController::class, 'sendResetLink'])->name('tenant.password.forgot.send');
+    Route::post('/mot-de-passe/oublie', [PasswordResetController::class, 'sendResetLink'])
+        ->middleware('throttle:5,1')
+        ->name('tenant.password.forgot.send');
     Route::get('/mot-de-passe/reinitialiser', [PasswordResetController::class, 'showResetForm'])->name('tenant.password.reset');
-    Route::post('/mot-de-passe/reinitialiser', [PasswordResetController::class, 'resetPassword'])->name('tenant.password.reset.update');
+    Route::post('/mot-de-passe/reinitialiser', [PasswordResetController::class, 'resetPassword'])
+        ->middleware('throttle:5,1')
+        ->name('tenant.password.reset.update');
 
     // Espace sécurisé étudiant
     Route::group(['middleware' => ['auth', 'role:etudiant']], function () {

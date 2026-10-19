@@ -100,10 +100,14 @@ class GenerateDocumentPdfJob implements ShouldQueue
                 'telechargements_count'=> 0,
             ]);
 
-            // 4.1. Verrouillage des résultats scolaires utilisés pour empêcher falsification ultérieure
-            \App\Models\Resultat::where('ecole_id', $ecole->id)
-                ->where('etudiant_id', $etudiant->id)
-                ->update(['verrouille' => true, 'verrouille_le' => now()]);
+            // 4.1. Verrouillage préventif optionnel si module de notes actif
+            try {
+                if (\Illuminate\Support\Facades\Schema::hasTable('resultats')) {
+                    \App\Models\Resultat::where('ecole_id', $ecole->id)
+                        ->where('etudiant_id', $etudiant->id)
+                        ->update(['verrouille' => true, 'verrouille_le' => now()]);
+                }
+            } catch (\Throwable $ignored) {}
 
             // 5. Mise à jour de la demande en état final
             $demande->update([

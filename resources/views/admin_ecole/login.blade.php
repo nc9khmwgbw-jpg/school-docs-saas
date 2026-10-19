@@ -412,6 +412,9 @@
 
             <form action="{{ route('admin_ecole.login.post') }}" method="POST">
                 @csrf
+                @if(isset($ecole) && $ecole)
+                    <input type="hidden" name="code_unique" value="{{ $ecole->code_unique }}">
+                @endif
                 <div style="margin-bottom:18px;">
                     <label for="email" class="auth-label">Email professionnel</label>
                     <input 

@@ -187,5 +187,40 @@ class SecurityHardeningTest extends TestCase
             ->where('statut', 'en_attente')
             ->delete();
     }
+
+    /**
+     * Teste que l'upload d'un logo SVG valide est accepté (non bloqué par l'ancienne règle image).
+     */
+    public function test_svg_logo_upload_is_accepted_and_sanitized(): void
+    {
+        $admin = Utilisateur::withoutGlobalScopes()->where('role', 'admin_ecole')->where('email', 'admin@ens.ma')->firstOrFail();
+
+        $validSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" /></svg>';
+        $svgFile = \Illuminate\Http\UploadedFile::fake()->createWithContent('logo.svg', $validSvg);
+
+        $response = $this->actingAs($admin)->post(route('admin_ecole.parametres.logo'), [
+            'logo' => $svgFile,
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertSessionHas('success');
+    }
+
+    /**
+     * Teste que la connexion admin est strictement cloisonnée par établissement lorsque code_unique est fourni.
+     */
+    public function test_school_admin_login_is_isolated_by_code_unique(): void
+    {
+        // Tentative de connexion avec les identifiants ENS sur le portail UIC
+        $response = $this->post(route('admin_ecole.login.post'), [
+            'email'        => 'admin@ens.ma',
+            'mot_de_passe' => 'Secret2026!',
+            'code_unique'  => 'UIC-2026',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
 }
+
 

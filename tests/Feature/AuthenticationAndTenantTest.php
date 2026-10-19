@@ -157,6 +157,8 @@ class AuthenticationAndTenantTest extends TestCase
      */
     public function test_password_reset_request_dispatches_email(): void
     {
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+
         $response = $this->post('/portal/ENS-2026/mot-de-passe/oublie', [
             'email' => 'sara.alami@ens.ma'
         ]);

@@ -55,6 +55,7 @@ class IdentifyTenant
         if ($tenant) {
             $isPublicPortalRoute = in_array($request->route()?->getName(), [
                 'tenant.portal',
+                'tenant.admin.login',
                 'tenant.login',
                 'tenant.logout',
                 'tenant.password.forgot',

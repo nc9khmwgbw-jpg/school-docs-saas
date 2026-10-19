@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SchoolAdminController extends Controller
 {
@@ -71,14 +72,24 @@ class SchoolAdminController extends Controller
 
         $email = strtolower(trim($credentials['email']));
 
-        $user = Utilisateur::withoutGlobalScopes()
+        $codeUnique = $request->input('code_unique');
+
+        $query = Utilisateur::withoutGlobalScopes()
             ->where('email', $email)
             ->where('role', 'admin_ecole')
-            ->where('statut', 'actif')
-            ->first();
+            ->where('statut', 'actif');
+
+        if ($codeUnique) {
+            $query->whereHas('ecole', fn($q) => $q->where('code_unique', strtoupper(trim($codeUnique))));
+        }
+
+        $user = $query->first();
 
         if (!$user || !\Illuminate\Support\Facades\Hash::check($credentials['mot_de_passe'], $user->mot_de_passe)) {
-            return back()->withInput()->withErrors(['email' => 'Identifiants invalides ou compte inactif.']);
+            $errorMsg = $codeUnique 
+                ? "Identifiants invalides pour l'espace d'administration de cet établissement."
+                : 'Identifiants invalides ou compte inactif.';
+            return back()->withInput()->withErrors(['email' => $errorMsg]);
         }
 
         // Réinitialise toute session résiduelle (ex: étudiant précédent)
@@ -425,6 +436,20 @@ class SchoolAdminController extends Controller
                     ->first();
 
                 if (!$compteEtudiant) {
+                    $existingEmailUser = Utilisateur::withoutGlobalScopes()
+                        ->where('ecole_id', $ecoleId)
+                        ->where('email', $emailEtudiant)
+                        ->first();
+
+                    if ($existingEmailUser) {
+                        $rapportErreurs[] = [
+                            'ligne' => $numeroLigne,
+                            'erreur' => "L'adresse email « {$emailEtudiant} » est déjà attribuée à l'étudiant {$existingEmailUser->prenom} {$existingEmailUser->nom} ({$existingEmailUser->matricule}) dans cet établissement."
+                        ];
+                        $lignesIgnorees++;
+                        continue;
+                    }
+
                     Utilisateur::create([
                         'ecole_id'                  => $ecoleId,
                         'role'                      => 'etudiant',
@@ -647,7 +672,7 @@ class SchoolAdminController extends Controller
     public function uploadLogo(Request $request)
     {
         $request->validate([
-            'logo' => 'required|image|mimes:png,jpg,jpeg,svg|max:2048',
+            'logo' => 'required|file|mimes:png,jpg,jpeg,svg|max:2048',
         ]);
 
         $ecole = auth()->user()->ecole;
@@ -690,7 +715,7 @@ class SchoolAdminController extends Controller
     public function uploadCachet(Request $request)
     {
         $request->validate([
-            'cachet' => 'required|image|mimes:png,jpg,jpeg,svg|max:2048',
+            'cachet' => 'required|file|mimes:png,jpg,jpeg,svg|max:2048',
         ]);
 
         $ecole = auth()->user()->ecole;
@@ -735,7 +760,7 @@ class SchoolAdminController extends Controller
     public function uploadSignature(Request $request)
     {
         $request->validate([
-            'signature' => 'required|image|mimes:png,jpg,jpeg,svg|max:2048',
+            'signature' => 'required|file|mimes:png,jpg,jpeg,svg|max:2048',
         ]);
 
         $ecole = auth()->user()->ecole;
