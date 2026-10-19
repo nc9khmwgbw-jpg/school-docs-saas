@@ -600,35 +600,37 @@
             flex-wrap: wrap;
         }
 
-        /* Bouton Plein Noir Arrondi */
+        /* Bouton Plein Noir Arrondi - Raffiné & Équilibré */
         .forma-solid-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            height: 54px;
-            padding: 0 32px;
+            gap: 8px;
+            height: 42px;
+            padding: 0 22px;
             border-radius: 9999px;
             background: var(--btn-bg);
             color: var(--btn-text);
             font-family: inherit;
-            font-size: 15.5px;
-            font-weight: 700;
+            font-size: 13.5px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
             border: none;
             cursor: pointer;
             text-decoration: none;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
             white-space: nowrap;
         }
         .forma-solid-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
         }
         .forma-solid-btn:hover .btn-arrow {
-            transform: translateX(4px);
+            transform: translateX(3px);
         }
         .forma-solid-btn .btn-arrow {
+            font-size: 14px;
             transition: transform 0.2s ease;
         }
         .forma-solid-btn:active {
