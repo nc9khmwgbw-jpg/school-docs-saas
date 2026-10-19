@@ -468,49 +468,7 @@
             </form>
         </div>
 
-        <!-- Séparateur Stylisé -->
-        <div class="section-separator">
-            <div class="separator-line"></div>
-            <div class="separator-text">Établissements partenaires répertoriés</div>
-            <div class="separator-line"></div>
-        </div>
 
-        <!-- Grille des Écoles Autonomes -->
-        <div class="schools-gateway-grid">
-            @forelse($ecoles as $ec)
-            <div class="school-dedicated-card">
-                <div>
-                    <div class="card-header-top">
-                        <span class="card-sigle-badge">{{ $ec->sigle }}</span>
-                        <span class="card-code-meta">Code : {{ $ec->code_unique }}</span>
-                    </div>
-                    <h2 class="card-school-name">{{ $ec->nom }}</h2>
-                    <p class="card-school-sub">
-                        Espace officiel pour la délivrance des certificats de scolarité et attestations de {{ $ec->sigle }}.
-                    </p>
-                </div>
-
-                <a href="{{ route('tenant.portal', ['code_unique' => $ec->code_unique]) }}" class="btn-access-school">
-                    <span>Accéder au portail {{ $ec->sigle }}</span>
-                    <span aria-hidden="true">&rarr;</span>
-                </a>
-            </div>
-            @empty
-            <div class="school-dedicated-card">
-                <div>
-                    <div class="card-header-top">
-                        <span class="card-sigle-badge">ENS</span>
-                        <span class="card-code-meta">Code : ENS-2026</span>
-                    </div>
-                    <h2 class="card-school-name">École Nationale Supérieure (ENS)</h2>
-                    <p class="card-school-sub">Espace étudiant officiel pour l'ENS Rabat.</p>
-                </div>
-                <a href="{{ route('tenant.portal', ['code_unique' => 'ENS-2026']) }}" class="btn-access-school">
-                    <span>Accéder au portail ENS &rarr;</span>
-                </a>
-            </div>
-            @endforelse
-        </div>
 
         <!-- Note de Sécurité Officielle -->
         <div class="gateway-security-notice">

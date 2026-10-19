@@ -930,36 +930,6 @@
                     </div>
                 </form>
 
-                <!-- Accès direct aux Établissements Partenaires (ENS, POLY, FST) -->
-                <div class="forma-partner-tray" id="etablissements">
-                    <span class="forma-schools-label">Écoles :</span>
-                    @forelse($ecoles ?? [] as $ecoleItem)
-                    <a 
-                        href="{{ route('tenant.portal', ['code_unique' => $ecoleItem->code_unique]) }}" 
-                        class="forma-school-chip" 
-                        title="{{ $ecoleItem->nom }}"
-                        data-sigle="{{ strtolower($ecoleItem->sigle) }}"
-                        data-nom="{{ $ecoleItem->nom }}"
-                        data-code="{{ $ecoleItem->code_unique }}"
-                    >
-                        @if($ecoleItem->logo_url)
-                            <img src="{{ $ecoleItem->logo_url }}" alt="Logo {{ $ecoleItem->nom }}" style="height:14px;width:auto;object-fit:contain;filter:grayscale(100%);">
-                        @endif
-                        <span>{{ $ecoleItem->sigle }} ({{ $ecoleItem->code_unique }})</span>
-                    </a>
-                    @empty
-                    <a 
-                        href="{{ route('tenant.portal', ['code_unique' => 'ENS-2026']) }}" 
-                        class="forma-school-chip"
-                        data-sigle="ens"
-                        data-nom="École Nationale Supérieure (ENS)"
-                        data-code="ENS-2026"
-                    >
-                        ENS (ENS-2026)
-                    </a>
-                    @endforelse
-                </div>
-
                 <div class="forma-credit-tag">
                     by docscolaire.saas &bull; sha-256 seal
                 </div>
