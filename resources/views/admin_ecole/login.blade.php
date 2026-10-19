@@ -366,13 +366,26 @@
 
     <div class="admin-login-wrapper">
         <div class="admin-login-card">
-            <div class="kicker-row">
-                <span class="badge-kicker">— GOUVERNANCE ACADÉMIQUE</span>
-                <span class="badge-kicker">DOCSCOLAIRE.ADMIN</span>
-            </div>
-
-            <h1 class="admin-title">Espace <em>Établissement.</em></h1>
-            <p class="admin-sub">Accès sécurisé réservé aux directions et gestionnaires de scolarité pour le scellement et la validation des documents officiels.</p>
+            @if(isset($ecole) && $ecole)
+                @if($ecole->logo_url)
+                    <div style="margin-bottom:14px;">
+                        <img src="{{ $ecole->logo_url }}" alt="Logo {{ $ecole->nom }}" style="height:38px;max-width:140px;object-fit:contain;">
+                    </div>
+                @endif
+                <div class="kicker-row">
+                    <span class="badge-kicker">— ÉTABLISSEMENT : {{ $ecole->sigle }}</span>
+                    <span class="badge-kicker">{{ $ecole->code_unique }}</span>
+                </div>
+                <h1 class="admin-title">{{ $ecole->nom }} <em>Administration.</em></h1>
+                <p class="admin-sub">Accès sécurisé réservé aux directions et gestionnaires de scolarité de {{ $ecole->sigle }}.</p>
+            @else
+                <div class="kicker-row">
+                    <span class="badge-kicker">— GOUVERNANCE ACADÉMIQUE</span>
+                    <span class="badge-kicker">DOCSCOLAIRE.ADMIN</span>
+                </div>
+                <h1 class="admin-title">Espace <em>Établissement.</em></h1>
+                <p class="admin-sub">Accès sécurisé réservé aux directions et gestionnaires de scolarité pour le scellement et la validation des documents officiels.</p>
+            @endif
 
             @if(session('success'))
                 <div style="background:rgba(16, 185, 129, 0.1);border:1px solid rgba(16, 185, 129, 0.3);color:#059669;padding:12px 14px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:20px;">
@@ -386,24 +399,7 @@
                 </div>
             @endif
 
-            <!-- Démo Pills Rapides -->
-            <div class="demo-credentials-box">
-                <div style="font-weight:700;color:var(--ink-primary);display:flex;align-items:center;gap:6px;margin-bottom:2px;">
-                    <span>⚡ Remplissage rapide Démo :</span>
-                </div>
-                <div class="demo-cred-row">
-                    <span class="demo-school-label">École ENS :</span>
-                    <span class="demo-cred-pill" onclick="fillAdmin('admin@ens.ma', 'Secret2026!')">
-                        admin@ens.ma &bull; Remplir &rarr;
-                    </span>
-                </div>
-                <div class="demo-cred-row">
-                    <span class="demo-school-label">Polytechnique :</span>
-                    <span class="demo-cred-pill" onclick="fillAdmin('contact@poly.ma', 'Secret2026!')">
-                        contact@poly.ma &bull; Remplir &rarr;
-                    </span>
-                </div>
-            </div>
+
 
             <form action="{{ route('admin_ecole.login.post') }}" method="POST">
                 @csrf
@@ -413,7 +409,7 @@
                         type="email" 
                         id="email" 
                         name="email" 
-                        value="{{ old('email', 'admin@ens.ma') }}" 
+                        value="{{ old('email') }}" 
                         class="forma-input-field"
                         placeholder="admin@ecole.ma" 
                         required 
@@ -428,7 +424,7 @@
                             type="password" 
                             id="mot_de_passe" 
                             name="mot_de_passe" 
-                            value="Secret2026!" 
+                            value="" 
                             class="forma-input-field"
                             placeholder="••••••••••••" 
                             required
@@ -449,7 +445,11 @@
             </form>
 
             <div class="forma-card-footer">
-                <a href="{{ route('home') }}" class="forma-link-subtle">&larr; Retour à l'accueil</a>
+                @if(isset($ecole) && $ecole)
+                    <a href="{{ route('tenant.portal', ['code_unique' => $ecole->code_unique]) }}" class="forma-link-subtle">&larr; Portail {{ $ecole->sigle }}</a>
+                @else
+                    <a href="{{ route('home') }}" class="forma-link-subtle">&larr; Retour à l'accueil</a>
+                @endif
                 <span class="security-badge-sub">Certifié SSL &bull; CNDP</span>
             </div>
         </div>

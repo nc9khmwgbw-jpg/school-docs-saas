@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\GenerateDocumentPdfJob;
 use App\Models\DemandeDocument;
 use App\Models\DocumentGenere;
+use App\Models\Ecole;
 use App\Models\EtudiantDonnee;
 use App\Models\Import;
 use App\Models\LogActivite;
@@ -27,13 +28,20 @@ class SchoolAdminController extends Controller
 
     // ── Authentification ───────────────────────────────────────────────────
 
-    public function showLogin(Request $request)
+    public function showLogin(Request $request, ?string $code_unique = null)
     {
+        $ecole = null;
+        if ($code_unique) {
+            $ecole = Ecole::where('code_unique', $code_unique)->where('statut', 'actif')->first();
+        }
+
         if ($request->has('switch') || $request->has('logout')) {
             auth()->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
-            return redirect()->route('admin_ecole.login');
+            return $code_unique 
+                ? redirect()->route('tenant.admin.login', ['code_unique' => $code_unique])
+                : redirect()->route('admin_ecole.login');
         }
 
         if (auth()->check()) {
@@ -51,7 +59,7 @@ class SchoolAdminController extends Controller
                     ->withErrors(['auth' => 'Vous êtes connecté en tant qu\'étudiant. Pour tester l\'administration en simultané, ouvrez une fenêtre de navigation privée (Ctrl+Maj+P) ou déconnectez-vous.']);
             }
         }
-        return view('admin_ecole.login');
+        return view('admin_ecole.login', compact('ecole'));
     }
 
     public function login(Request $request)

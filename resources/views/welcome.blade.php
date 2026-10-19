@@ -796,7 +796,6 @@
         </a>
 
         <nav class="forma-nav-actions">
-            <a href="#etablissements" class="forma-nav-link">Établissements</a>
             <a href="{{ route('public.verifier', ['uuid' => '00000000-0000-0000-0000-000000000000']) }}" class="forma-nav-link">Vérification QR</a>
             <button type="button" class="forma-moon-btn" id="themeToggleBtn" title="Basculer Mode Clair / Sombre" aria-label="Mode Clair / Sombre">
                 <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -853,20 +852,12 @@
                     </div>
                 @endif
 
-                <!-- En-tête architectural : Statut Sécurisé + Pastille Démo -->
+                <!-- En-tête architectural : Statut Sécurisé -->
                 <div class="forma-auth-header">
                     <div class="forma-auth-label">
                         <span class="auth-status-dot"></span>
                         <span>Portail Central Sécurisé</span>
                     </div>
-
-                    @if($demoEtudiant)
-                    <button type="button" class="forma-demo-pill" id="demo-autofill-btn" title="Cliquer pour tester avec le compte Sara Alami (ENS)">
-                        <span class="demo-sparkle">✦</span>
-                        <span>Démo : <strong>{{ $demoEtudiant->prenom }} {{ $demoEtudiant->nom }}</strong></span>
-                        <span class="demo-badge">1-Clic &rarr;</span>
-                    </button>
-                    @endif
                 </div>
 
                 <!-- Formulaire de Connexion Agrandie (+25-30%) -->

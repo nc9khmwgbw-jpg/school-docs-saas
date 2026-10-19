@@ -93,6 +93,7 @@ Route::group(['prefix' => 'portal/{code_unique}', 'middleware' => ['web', 'ident
 
     // Pages publiques du portail (sans authentification)
     Route::get('/', [TenantPortalController::class, 'showPortal'])->name('tenant.portal');
+    Route::get('/admin', [SchoolAdminController::class, 'showLogin'])->name('tenant.admin.login');
     Route::post('/login', [TenantPortalController::class, 'login'])
         ->middleware('throttle.login')
         ->name('tenant.login');
