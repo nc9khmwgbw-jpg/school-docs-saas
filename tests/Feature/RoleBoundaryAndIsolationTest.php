@@ -93,14 +93,12 @@ class RoleBoundaryAndIsolationTest extends TestCase
     }
 
     /**
-     * Test 7: La page étudiante MyPortal ne doit comporter AUCUN lien vers admin-ecole/login.
+     * Test 7: La page étudiante MyPortal redirige vers l'accueil pour garantir le cloisonnement multi-tenant.
      */
     public function test_myportal_does_not_contain_admin_ecole_link(): void
     {
         $response = $this->get('/myportal');
-        $response->assertStatus(200);
-        $response->assertDontSee('/admin-ecole/login');
-        $response->assertDontSee('Portail Établissement');
+        $response->assertRedirect('/');
     }
 
     /**

@@ -22,7 +22,7 @@ class CheckRole
                 $codeUnique = $request->route('code_unique');
                 return $codeUnique 
                     ? redirect()->route('tenant.portal', ['code_unique' => $codeUnique])->withErrors(['auth' => 'Authentification requise pour accéder à votre espace étudiant.'])
-                    : redirect()->route('myportal')->withErrors(['auth' => 'Authentification requise pour accéder à votre espace étudiant.']);
+                    : redirect()->route('home')->withErrors(['auth' => 'Authentification requise pour accéder à votre espace étudiant.']);
             }
 
             if (in_array('admin_ecole', $roles, true)) {
@@ -57,7 +57,7 @@ class CheckRole
                 return $codeUnique
                     ? redirect()->route('tenant.dashboard', ['code_unique' => $codeUnique])
                         ->withErrors(['auth' => 'Accès refusé : votre profil étudiant ne dispose pas des droits d\'administration.'])
-                    : redirect()->route('myportal')
+                    : redirect()->route('home')
                         ->withErrors(['auth' => 'Accès refusé : espace d\'administration réservé.']);
             }
 

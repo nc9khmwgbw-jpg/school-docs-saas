@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Storage;
 class TenantPortalController extends Controller
 {
     /**
-     * Page d'accueil universelle MyPortal (accès direct pour les étudiants sans code école).
+     * Page d'accueil universelle MyPortal - Redirigée vers l'accueil (Marque Blanche stricte).
      * Route: GET /myportal
      */
     public function showMyPortal(Request $request)
@@ -26,7 +26,7 @@ class TenantPortalController extends Controller
             auth()->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
-            return redirect()->route('myportal');
+            return redirect()->route('home');
         }
 
         if (auth()->check()) {
@@ -35,25 +35,24 @@ class TenantPortalController extends Controller
                 return redirect()->route('tenant.dashboard', ['code_unique' => $user->ecole->code_unique]);
             }
             if ($user->isAdminEcole()) {
-                return redirect()->route('admin_ecole.dashboard')
-                    ->withErrors(['auth' => 'Vous êtes connecté avec un compte d\'administration. Pour accéder au portail étudiant, déconnectez-vous d\'abord.']);
+                return redirect()->route('admin_ecole.dashboard');
             }
             if ($user->isSuperAdmin()) {
                 return redirect()->route('superadmin.dashboard');
             }
         }
 
-        $ecoles = Ecole::where('statut', 'actif')->get();
-
         if ($request->filled('ecole')) {
             $code = strtoupper(trim($request->input('ecole')));
-            $selectedEcole = $ecoles->first(fn($e) => $e->code_unique === $code || strtoupper($e->sigle) === $code);
+            $selectedEcole = Ecole::where('statut', 'actif')
+                ->where(fn($q) => $q->where('code_unique', $code)->orWhere('sigle', $code))
+                ->first();
             if ($selectedEcole) {
                 return redirect()->route('tenant.portal', ['code_unique' => $selectedEcole->code_unique]);
             }
         }
 
-        return view('portal.myportal', compact('ecoles'));
+        return redirect()->route('home');
     }
 
     /**

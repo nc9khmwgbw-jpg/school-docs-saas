@@ -23,10 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(function (Request $request) {
             if ($request->is('portal/*')) {
                 $code = $request->route('code_unique');
-                return $code ? route('tenant.portal', ['code_unique' => $code]) : route('myportal');
+                return $code ? route('tenant.portal', ['code_unique' => $code]) : route('home');
             }
             if ($request->is('myportal') || $request->is('myportal/*')) {
-                return route('myportal');
+                return route('home');
             }
             if ($request->is('superadmin') || $request->is('superadmin/*')) {
                 return route('superadmin.login');

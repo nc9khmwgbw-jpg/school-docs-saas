@@ -166,14 +166,12 @@ class AuthenticationAndTenantTest extends TestCase
     }
 
     /**
-     * Teste l'accès direct à MyPortal (sans spécifier de code école dans l'URL).
+     * Teste que l'URL MyPortal redirige vers l'accueil (isolation stricte multi-tenant).
      */
-    public function test_myportal_page_is_accessible(): void
+    public function test_myportal_page_redirects_to_home(): void
     {
         $response = $this->get('/myportal');
-        $response->assertStatus(200);
-        $response->assertSee('MyPortal');
-        $response->assertSee('Espace Étudiant');
+        $response->assertRedirect('/');
     }
 
     /**

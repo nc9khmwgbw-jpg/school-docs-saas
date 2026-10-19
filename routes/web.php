@@ -18,7 +18,7 @@ Route::get('/', function () {
     return view('welcome', compact('ecoles'));
 })->name('home');
 
-// Accès direct Étudiant universel (comme les universités UIC / ENT)
+// Redirection transparente vers l'accueil (cloisonnement strict multi-tenant : chaque étudiant passe par son école)
 Route::get('/myportal', [TenantPortalController::class, 'showMyPortal'])->name('myportal');
 Route::get('/myportal/detect-school', [TenantPortalController::class, 'detectSchool'])
     ->middleware('throttle:30,1')
@@ -26,13 +26,13 @@ Route::get('/myportal/detect-school', [TenantPortalController::class, 'detectSch
 Route::post('/myportal/login', [TenantPortalController::class, 'loginMyPortal'])
     ->middleware('throttle.login')
     ->name('myportal.login');
-Route::get('/portal', fn() => redirect()->route('myportal'));
-Route::get('/etudiant', fn() => redirect()->route('myportal'));
+Route::get('/portal', fn() => redirect()->route('home'));
+Route::get('/etudiant', fn() => redirect()->route('home'));
 
 // Vue visuelle immersive (strictement réservée aux utilisateurs authentifiés)
 Route::get('/sublime', function (Request $request) {
     if (!auth()->check()) {
-        return redirect()->route('myportal')->withErrors(['auth' => 'Veuillez vous connecter pour prévisualiser cet espace.']);
+        return redirect()->route('home')->withErrors(['auth' => 'Veuillez vous connecter pour prévisualiser cet espace.']);
     }
     $ecoles = \App\Models\Ecole::where('statut', 'actif')->get();
     $user = auth()->user();

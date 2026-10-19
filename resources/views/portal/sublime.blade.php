@@ -343,8 +343,8 @@
                     <span>{{ $ec->sigle }}</span>
                 </a>
             @endforeach
-            <a href="{{ route('myportal') }}" style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:700;color:#6ee7b7;text-decoration:none;background:rgba(110,231,183,0.1);border:1px solid rgba(110,231,183,0.25);">
-                <span>MyPortal &rarr;</span>
+            <a href="{{ route('home') }}" style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:700;color:#6ee7b7;text-decoration:none;background:rgba(110,231,183,0.1);border:1px solid rgba(110,231,183,0.25);">
+                <span>Accueil &rarr;</span>
             </a>
         </div>
     </div>
