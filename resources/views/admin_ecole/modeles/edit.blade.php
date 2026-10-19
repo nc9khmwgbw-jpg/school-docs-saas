@@ -206,7 +206,7 @@
         <div class="card">
             <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">Gabarit HTML &amp; Variables</h3>
             <div class="variables-box">
-                <div class="variables-title">📌 Variables dynamiques disponibles :</div>
+                <div class="variables-title">📌 Variables dynamiques officielles (cliquez pour insérer) :</div>
                 <div class="tags-list">
                     <span class="tag-token" onclick="insertTag('{nom}')">{nom}</span>
                     <span class="tag-token" onclick="insertTag('{prenom}')">{prenom}</span>
@@ -214,11 +214,16 @@
                     <span class="tag-token" onclick="insertTag('{filiere}')">{filiere}</span>
                     <span class="tag-token" onclick="insertTag('{niveau}')">{niveau}</span>
                     <span class="tag-token" onclick="insertTag('{annee_universitaire}')">{annee_universitaire}</span>
-                    <span class="tag-token" onclick="insertTag('{moyenne}')">{moyenne}</span>
-                    <span class="tag-token" onclick="insertTag('{mention}')">{mention}</span>
                     <span class="tag-token" onclick="insertTag('{date_du_jour}')">{date_du_jour}</span>
                     <span class="tag-token" onclick="insertTag('{nom_ecole}')">{nom_ecole}</span>
-                    <span class="tag-token" onclick="insertTag('{qr_code}')">{qr_code}</span>
+                    <span class="tag-token" onclick="insertTag('{adresse_ecole}')">{adresse_ecole}</span>
+                    <span class="tag-token" onclick="insertTag('{email_ecole}')">{email_ecole}</span>
+                    <span class="tag-token" onclick="insertTag('{telephone_ecole}')">{telephone_ecole}</span>
+                    <span class="tag-token" onclick="insertTag('{logo}')" style="background:#e0e7ff;border-color:#818cf8;color:#3730a3;">{logo}</span>
+                    <span class="tag-token" onclick="insertTag('{cachet}')" style="background:#fef3c7;border-color:#f59e0b;color:#92400e;">{cachet}</span>
+                    <span class="tag-token" onclick="insertTag('{signature}')" style="background:#ecfdf5;border-color:#10b981;color:#065f46;">{signature}</span>
+                    <span class="tag-token" onclick="insertTag('{photo_etudiant}')" style="background:#f3e8ff;border-color:#a855f7;color:#6b21a8;">{photo_etudiant}</span>
+                    <span class="tag-token" onclick="insertTag('{qr_code}')" style="background:#f1f5f9;border-color:#64748b;color:#0f172a;font-weight:700;">{qr_code}</span>
                 </div>
             </div>
 

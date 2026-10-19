@@ -469,6 +469,24 @@
                     <div class="crypto-hash">{{ $uuid }}</div>
                 </div>
 
+            @elseif($uuid === '00000000-0000-0000-0000-000000000000')
+                <div class="card-hero">
+                    <div class="status-badge-wrap" style="background:rgba(37,99,235,0.08);color:#2563eb;border:1px solid rgba(37,99,235,0.25);">
+                        <span class="beacon-dot" style="background:#2563eb;"></span>
+                        <span>Contrôle Officiel Anti-Fraude</span>
+                    </div>
+                    <h1 class="hero-title">Document Non Trouvé &bull; <em>Recherche</em></h1>
+                    <p class="hero-sub">Saisissez l'identifiant unique UUID officiel mentionné au bas du document académique pour certifier instantanément son authenticité.</p>
+                </div>
+                <div style="padding: 24px 32px;">
+                    <form onsubmit="event.preventDefault(); const v = document.getElementById('searchUuidInput').value.trim(); if(v) window.location.href='/verifier/' + v;" style="display:flex;flex-direction:column;gap:14px;">
+                        <input type="text" id="searchUuidInput" placeholder="Ex: 550e8400-e29b-41d4-a716-446655440000" style="width:100%;height:46px;padding:0 16px;border-radius:14px;border:1px solid var(--hairline-strong);background:var(--canvas-subtle);color:var(--ink-primary);font-family:var(--font-mono);font-size:13px;box-sizing:border-box;" required>
+                        <button type="submit" class="btn-forma-carbon" style="width:100%;">
+                            <span>Vérifier l'authenticité</span>
+                            <span>&rarr;</span>
+                        </button>
+                    </form>
+                </div>
             @else
                 <div class="card-hero">
                     <div class="status-badge-wrap status-badge-invalid">
@@ -481,6 +499,15 @@
                 <div class="crypto-block">
                     <div class="crypto-label">Identifiant Scanné</div>
                     <div class="crypto-hash">{{ $uuid }}</div>
+                </div>
+                <div style="padding: 18px 32px 24px;">
+                    <form onsubmit="event.preventDefault(); const v = document.getElementById('retryUuidInput').value.trim(); if(v) window.location.href='/verifier/' + v;" style="display:flex;flex-direction:column;gap:12px;">
+                        <input type="text" id="retryUuidInput" placeholder="Vérifier un autre UUID..." style="width:100%;height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--hairline-strong);background:var(--canvas-subtle);color:var(--ink-primary);font-family:var(--font-mono);font-size:12.5px;box-sizing:border-box;" required>
+                        <button type="submit" class="btn-forma-carbon" style="width:100%;padding:10px 18px;font-size:12.5px;">
+                            <span>Rechercher à nouveau</span>
+                            <span>&rarr;</span>
+                        </button>
+                    </form>
                 </div>
             @endif
         </div>

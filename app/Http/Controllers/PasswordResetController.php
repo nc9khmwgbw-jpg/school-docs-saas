@@ -61,7 +61,7 @@ class PasswordResetController extends Controller
                 'email'       => $utilisateur->email,
             ]);
 
-            // Envoi de l'email (en queue pour ne pas bloquer)
+            // Envoi de l'email
             Mail::send('emails.password_reset', [
                 'utilisateur' => $utilisateur,
                 'resetUrl'    => $resetUrl,
@@ -125,7 +125,8 @@ class PasswordResetController extends Controller
             ->firstOrFail();
 
         $utilisateur->update([
-            'mot_de_passe' => Hash::make($request->input('mot_de_passe')),
+            'mot_de_passe'              => Hash::make($request->input('mot_de_passe')),
+            'doit_changer_mot_de_passe' => false,
         ]);
 
         DB::table('password_reset_tokens')->where('email', $request->input('email'))->delete();

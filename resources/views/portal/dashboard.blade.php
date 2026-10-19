@@ -807,12 +807,28 @@
             </div>
 
             <div class="forma-hero-actions">
+                <button type="button" class="forma-outline-btn" onclick="openPasswordModal()" title="Modifier votre mot de passe personnel">
+                    <span>🔒 Sécurité mot de passe</span>
+                </button>
                 <a href="{{ route('tenant.historique', ['code_unique' => $ecole->code_unique]) }}" class="forma-outline-btn">
                     <span>Historique complet</span>
                     <span aria-hidden="true">&rarr;</span>
                 </a>
             </div>
         </div>
+
+        <!-- ⚠️ Alerte Première Connexion : Changement de mot de passe obligatoire -->
+        @if($etudiant->doit_changer_mot_de_passe)
+            <div class="forma-alert" style="background:rgba(217,119,6,0.12);border:1px solid rgba(217,119,6,0.3);color:#d97706;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:18px;">⚠️</span>
+                    <span><strong>Sécurité renforcée requise :</strong> Vous utilisez actuellement le mot de passe temporaire initial. Veuillez le personnaliser dès maintenant pour sécuriser l'accès à vos pièces académiques.</span>
+                </div>
+                <button type="button" class="forma-action-btn-sm" style="background:#d97706;color:#ffffff;border:none;cursor:pointer;" onclick="openPasswordModal()">
+                    Personnaliser mon mot de passe
+                </button>
+            </div>
+        @endif
 
         <!-- Alertes Session -->
         @if(session('success'))
@@ -1008,6 +1024,47 @@
     <!-- Toast Notification Copie -->
     <div class="forma-toast" id="copyToast">✓ Matricule copié dans le presse-papier</div>
 
+    <!-- ── Modal Modification Mot de Passe Éditorial Forma ── -->
+    <div id="passwordModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(10px);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:var(--canvas-card-solid);border:1px solid var(--hairline-strong);border-radius:24px;width:100%;max-width:480px;padding:32px;box-shadow:0 24px 60px rgba(0,0,0,0.25);position:relative;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;">
+                <div>
+                    <span style="font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:0.08em;color:var(--ink-muted);text-transform:uppercase;">Sécurité du compte</span>
+                    <h3 style="font-size:20px;font-weight:900;letter-spacing:-0.03em;color:var(--ink-primary);margin-top:2px;">Modifier mon mot de passe</h3>
+                </div>
+                <button type="button" onclick="closePasswordModal()" style="background:none;border:none;font-size:22px;color:var(--ink-muted);cursor:pointer;padding:4px 8px;border-radius:8px;">✕</button>
+            </div>
+
+            <form action="{{ route('tenant.profil.password.update', ['code_unique' => $ecole->code_unique]) }}" method="POST">
+                @csrf
+                <div style="display:flex;flex-direction:column;gap:16px;">
+                    <div>
+                        <label style="font-size:12.5px;font-weight:700;color:var(--ink-secondary);display:block;margin-bottom:6px;">Mot de passe actuel *</label>
+                        <input type="password" name="mot_de_passe_actuel" required placeholder="Votre mot de passe actuel" style="width:100%;height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--hairline-strong);background:var(--canvas-subtle);color:var(--ink-primary);font-family:inherit;font-size:14px;box-sizing:border-box;">
+                    </div>
+
+                    <div>
+                        <label style="font-size:12.5px;font-weight:700;color:var(--ink-secondary);display:block;margin-bottom:6px;">Nouveau mot de passe (min. 8 caractères) *</label>
+                        <input type="password" name="nouveau_mot_de_passe" required minlength="8" placeholder="Nouveau mot de passe" style="width:100%;height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--hairline-strong);background:var(--canvas-subtle);color:var(--ink-primary);font-family:inherit;font-size:14px;box-sizing:border-box;">
+                    </div>
+
+                    <div>
+                        <label style="font-size:12.5px;font-weight:700;color:var(--ink-secondary);display:block;margin-bottom:6px;">Confirmer le nouveau mot de passe *</label>
+                        <input type="password" name="nouveau_mot_de_passe_confirmation" required minlength="8" placeholder="Retapez le nouveau mot de passe" style="width:100%;height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--hairline-strong);background:var(--canvas-subtle);color:var(--ink-primary);font-family:inherit;font-size:14px;box-sizing:border-box;">
+                    </div>
+
+                    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
+                        <button type="button" onclick="closePasswordModal()" class="forma-outline-btn" style="height:42px;padding:0 18px;border-radius:9999px;">Annuler</button>
+                        <button type="submit" class="forma-solid-btn" style="height:42px;padding:0 22px;border-radius:9999px;background:var(--ink-primary);color:var(--canvas-bg);border:none;font-weight:700;cursor:pointer;">
+                            <span>Enregistrer</span>
+                            <span aria-hidden="true">&rarr;</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // Gestion du Thème Clair / Sombre Forma
         (function initTheme() {
@@ -1038,6 +1095,16 @@
                     });
                 }
             });
+        }
+
+        // Modal Mot de passe
+        function openPasswordModal() {
+            const modal = document.getElementById('passwordModal');
+            if (modal) modal.style.display = 'flex';
+        }
+        function closePasswordModal() {
+            const modal = document.getElementById('passwordModal');
+            if (modal) modal.style.display = 'none';
         }
     </script>
 </body>

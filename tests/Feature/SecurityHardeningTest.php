@@ -20,6 +20,7 @@ class SecurityHardeningTest extends TestCase
     {
         parent::setUp();
         \App\Scopes\TenantScope::setTenantId(null);
+        \Illuminate\Support\Facades\Cache::flush();
     }
 
     protected function tearDown(): void
@@ -221,6 +222,54 @@ class SecurityHardeningTest extends TestCase
         $response->assertSessionHasErrors('email');
         $this->assertGuest();
     }
+
+    /**
+     * Teste que l'étudiant peut modifier son mot de passe et que le drapeau doit_changer_mot_de_passe passe à false.
+     */
+    public function test_student_can_update_password_and_clears_must_change_flag(): void
+    {
+        $ecole = Ecole::where('code_unique', 'ENS-2026')->firstOrFail();
+        $etudiant = Utilisateur::withoutGlobalScopes()
+            ->where('ecole_id', $ecole->id)
+            ->where('role', 'etudiant')
+            ->firstOrFail();
+
+        $etudiant->update([
+            'mot_de_passe'              => \Illuminate\Support\Facades\Hash::make('Secret2026!'),
+            'doit_changer_mot_de_passe' => true,
+        ]);
+
+        $response = $this->actingAs($etudiant)->post("/portal/{$ecole->code_unique}/profil/mot-de-passe", [
+            'mot_de_passe_actuel'               => 'Secret2026!',
+            'nouveau_mot_de_passe'              => 'NouveauMdpSecurise2026#',
+            'nouveau_mot_de_passe_confirmation' => 'NouveauMdpSecurise2026#',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertSessionHas('success');
+
+        $etudiant->refresh();
+        $this->assertFalse((bool) $etudiant->doit_changer_mot_de_passe);
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('NouveauMdpSecurise2026#', $etudiant->mot_de_passe));
+
+        // Restauration de l'état initial pour l'isolation des autres tests de la suite
+        $etudiant->update([
+            'mot_de_passe'              => \Illuminate\Support\Facades\Hash::make('Secret2026!'),
+            'doit_changer_mot_de_passe' => false,
+        ]);
+    }
+
+    /**
+     * Teste que l'URL /verifier/{dummy} affiche l'interface d'investigation/recherche officielle.
+     */
+    public function test_verification_endpoint_shows_search_interface_for_dummy_uuid(): void
+    {
+        $response = $this->get('/verifier/00000000-0000-0000-0000-000000000000');
+        $response->assertStatus(200);
+        $response->assertSee("Contrôle Officiel Anti-Fraude");
+        $response->assertSee("searchUuidInput");
+    }
 }
+
 
 

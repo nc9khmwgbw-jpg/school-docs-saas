@@ -831,7 +831,7 @@
                     <em>Espace Étudiant Universel.</em>
                 </h1>
                 <p class="forma-editorial-desc" id="editorialDesc">
-                    Coffre-fort académique national et infalsifiable. Accédez instantanément à vos attestations de scolarité, relevés de notes et certificats d'études scellés pour l'ensemble des établissements partenaires.
+                    Coffre-fort académique souverain et infalsifiable. Accédez instantanément à vos attestations de scolarité, conventions de stage et certificats d'études officiels scellés cryptographiquement.
                 </p>
             </div>
         </section>

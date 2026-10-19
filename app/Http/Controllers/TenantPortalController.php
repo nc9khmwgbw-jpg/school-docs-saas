@@ -610,4 +610,48 @@ class TenantPortalController extends Controller
             ['Content-Type' => 'application/pdf']
         );
     }
+
+    /**
+     * Mise à jour sécurisée du mot de passe de l'étudiant.
+     * Route: POST /portal/{code_unique}/profil/mot-de-passe
+     */
+    public function updatePassword(Request $request, string $code_unique)
+    {
+        $ecole = Ecole::where('code_unique', $code_unique)->firstOrFail();
+        $etudiant = auth()->user();
+
+        if (!$etudiant || $etudiant->ecole_id !== $ecole->id) {
+            abort(403, "Action non autorisée pour cet établissement.");
+        }
+
+        $request->validate([
+            'mot_de_passe_actuel'               => 'required|string',
+            'nouveau_mot_de_passe'              => 'required|string|min:8|confirmed|different:mot_de_passe_actuel',
+            'nouveau_mot_de_passe_confirmation' => 'required|string',
+        ], [
+            'nouveau_mot_de_passe.different' => 'Le nouveau mot de passe doit être différent du mot de passe actuel.',
+            'nouveau_mot_de_passe.min'       => 'Le nouveau mot de passe doit comporter au moins 8 caractères.',
+            'nouveau_mot_de_passe.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
+        ]);
+
+        if (!Hash::check($request->input('mot_de_passe_actuel'), $etudiant->mot_de_passe)) {
+            return back()->withErrors(['mot_de_passe_actuel' => 'Le mot de passe actuel est incorrect.']);
+        }
+
+        $etudiant->update([
+            'mot_de_passe'              => Hash::make($request->input('nouveau_mot_de_passe')),
+            'doit_changer_mot_de_passe' => false,
+        ]);
+
+        AuditService::logAuth(
+            action:    LogActivite::ACTION_RESET_MDP,
+            cibleType: 'Utilisateur',
+            cibleId:   $etudiant->id,
+            details:   ['motif' => 'modification_personnelle_profil']
+        );
+
+        return redirect()->route('tenant.dashboard', ['code_unique' => $code_unique])
+            ->with('success', 'Votre mot de passe a été modifié avec succès. Votre compte est désormais sécurisé.');
+    }
 }
+

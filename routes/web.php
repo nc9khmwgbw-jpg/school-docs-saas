@@ -112,9 +112,14 @@ Route::group(['prefix' => 'portal/{code_unique}', 'middleware' => ['web', 'ident
     // Espace sécurisé étudiant
     Route::group(['middleware' => ['auth', 'role:etudiant']], function () {
         Route::get('/dashboard', [TenantPortalController::class, 'dashboard'])->name('tenant.dashboard');
-        Route::post('/demandes', [TenantPortalController::class, 'storeDemande'])->name('tenant.demandes.store');
+        Route::post('/demandes', [TenantPortalController::class, 'storeDemande'])
+            ->middleware('throttle:10,1')
+            ->name('tenant.demandes.store');
         Route::get('/historique', [TenantPortalController::class, 'historique'])->name('tenant.historique');
         Route::get('/documents/{uuid}/download', [TenantPortalController::class, 'downloadDocument'])->name('tenant.documents.download');
+        Route::post('/profil/mot-de-passe', [TenantPortalController::class, 'updatePassword'])
+            ->middleware('throttle:5,1')
+            ->name('tenant.profil.password.update');
     });
 });
 
@@ -123,17 +128,19 @@ Route::group(['prefix' => 'portal/{code_unique}', 'middleware' => ['web', 'ident
 | 4. PARCOURS ADMINISTRATEUR ÉCOLE (Gestionnaire)
 |--------------------------------------------------------------------------
 */
-// Authentification Admin École (public)
+// Authentification Admin École (public - protégée contre la force brute)
 Route::group(['prefix' => 'admin-ecole', 'middleware' => ['web']], function () {
     Route::get('/login', [SchoolAdminController::class, 'showLogin'])->name('admin_ecole.login');
-    Route::post('/login', [SchoolAdminController::class, 'login'])->name('admin_ecole.login.post');
+    Route::post('/login', [SchoolAdminController::class, 'login'])
+        ->middleware('throttle.login')
+        ->name('admin_ecole.login.post');
 });
 
 // Redirection globale vers login admin
 Route::get('/login', [SchoolAdminController::class, 'showLogin'])->name('login');
 
-// Espace sécurisé Admin École
-Route::group(['prefix' => 'admin-ecole', 'middleware' => ['web', 'auth', 'role:admin_ecole', 'session.timeout']], function () {
+// Espace sécurisé Admin École (avec isolation TenantScope garantie)
+Route::group(['prefix' => 'admin-ecole', 'middleware' => ['web', 'auth', 'role:admin_ecole', 'identify.tenant', 'session.timeout']], function () {
 
     // Dashboard principal
     Route::get('/', [SchoolAdminController::class, 'dashboard'])->name('admin_ecole.dashboard');
@@ -182,10 +189,12 @@ Route::group(['prefix' => 'admin-ecole', 'middleware' => ['web', 'auth', 'role:a
 | 5. PARCOURS SUPER ADMINISTRATEUR (Propriétaire SaaS)
 |--------------------------------------------------------------------------
 */
-// Authentification Super Admin (public)
+// Authentification Super Admin (public - protégée contre la force brute)
 Route::group(['prefix' => 'superadmin', 'middleware' => ['web']], function () {
     Route::get('/login', [SuperAdminController::class, 'showLogin'])->name('superadmin.login');
-    Route::post('/login', [SuperAdminController::class, 'login'])->name('superadmin.login.post');
+    Route::post('/login', [SuperAdminController::class, 'login'])
+        ->middleware('throttle.login')
+        ->name('superadmin.login.post');
 });
 
 // Espace sécurisé Super Admin
