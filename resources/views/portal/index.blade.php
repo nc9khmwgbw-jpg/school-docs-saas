@@ -759,7 +759,7 @@
 
     <!-- Header Supérieur Minimaliste Style Forma -->
     <header class="forma-header">
-        <a href="{{ route('home') }}" class="forma-brand" title="Retour à l'accueil DocScolaire">
+        <a href="{{ route('tenant.portal', ['code_unique' => $ecole->code_unique]) }}" class="forma-brand" title="{{ $ecole->nom }}">
             @if($ecole->logo_url)
                 <img src="{{ $ecole->logo_url }}" alt="Logo {{ $ecole->nom }}" style="height:28px;width:auto;max-width:130px;object-fit:contain;vertical-align:middle;margin-right:6px;filter:grayscale(100%);">
             @endif
@@ -767,19 +767,18 @@
         </a>
 
         <nav class="forma-nav-actions">
-            <a href="{{ route('home') }}" class="forma-nav-link">Accueil SaaS</a>
-            <a href="#etablissements" class="forma-nav-link">Écoles</a>
-            <a href="{{ route('public.verifier', ['uuid' => '00000000-0000-0000-0000-000000000000']) }}" class="forma-nav-link">Vérification QR</a>
-            
             <button type="button" class="forma-moon-btn" id="themeToggleBtn" title="Basculer Mode Clair / Sombre" aria-label="Mode Clair / Sombre">
                 <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                 </svg>
             </button>
 
-            <a href="{{ route('admin_ecole.login') }}" class="forma-pill-btn">
-                Administration
-            </a>
+            <form action="{{ route('tenant.logout', ['code_unique' => $ecole->code_unique]) }}" method="POST" style="margin:0;display:inline;">
+                @csrf
+                <button type="submit" class="forma-pill-btn" title="Se déconnecter">
+                    <span>Déconnexion</span>
+                </button>
+            </form>
         </nav>
     </header>
 
