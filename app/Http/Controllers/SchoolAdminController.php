@@ -821,12 +821,31 @@ class SchoolAdminController extends Controller
 
     public function logout(Request $request)
     {
+        // Si la session était une impersonation SuperAdmin, on restaure la session SuperAdmin
+        if ($request->session()->has('impersonated_by_superadmin')) {
+            $superAdminId = $request->session()->pull('impersonated_by_superadmin');
+            $superAdmin = Utilisateur::withoutGlobalScopes()->find($superAdminId);
+            if ($superAdmin) {
+                auth()->login($superAdmin);
+                return redirect()->route('superadmin.dashboard')
+                    ->with('success', 'Retour à votre console SuperAdmin.');
+            }
+        }
+
+        $codeUnique = auth()->user()?->ecole?->code_unique;
+
         AuditService::logAuth(LogActivite::ACTION_DECONNEXION);
         auth()->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('home')->with('success', 'Déconnexion réussie.');
+        if ($codeUnique) {
+            return redirect()->route('tenant.admin.login', ['code_unique' => $codeUnique])
+                ->with('success', 'Vous avez été déconnecté(e) avec succès.');
+        }
+
+        return redirect()->route('admin_ecole.login')
+            ->with('success', 'Vous avez été déconnecté(e) avec succès.');
     }
 
     // ── Utilitaires privés ───────────────────────────────────────────────────

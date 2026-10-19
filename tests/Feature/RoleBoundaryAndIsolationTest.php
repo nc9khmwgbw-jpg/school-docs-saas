@@ -177,4 +177,17 @@ class RoleBoundaryAndIsolationTest extends TestCase
         $response->assertRedirect('/admin-ecole');
         $this->assertAuthenticatedAs($admin);
     }
+
+    /**
+     * Test 14: Un admin d'école qui se déconnecte doit être redirigé vers la page admin de son établissement (et PAS vers le site public SaaS).
+     */
+    public function test_school_admin_logout_redirects_to_school_specific_admin_login(): void
+    {
+        $admin = Utilisateur::withoutGlobalScopes()->where('role', 'admin_ecole')->where('email', 'admin@ens.ma')->firstOrFail();
+
+        $response = $this->actingAs($admin)->post('/admin-ecole/logout');
+        $response->assertRedirect('/portal/ENS-2026/admin');
+        $this->assertGuest();
+    }
 }
+

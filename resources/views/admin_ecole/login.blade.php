@@ -353,9 +353,18 @@
 
     <!-- Barre supérieure Minimaliste -->
     <header class="forma-top-bar">
-        <a href="{{ route('home') }}" class="forma-top-brand">
-            <span>DocScolaire<sup>®</sup></span>
-        </a>
+        @if(isset($ecole) && $ecole)
+            <a href="{{ route('tenant.portal', ['code_unique' => $ecole->code_unique]) }}" class="forma-top-brand" title="{{ $ecole->nom }}">
+                @if($ecole->logo_url)
+                    <img src="{{ $ecole->logo_url }}" alt="Logo {{ $ecole->nom }}" style="height:26px;width:auto;max-width:110px;object-fit:contain;vertical-align:middle;margin-right:6px;filter:grayscale(100%);">
+                @endif
+                <span>{{ $ecole->sigle }}<sup>®</sup> <span style="font-size:12px;font-weight:500;color:var(--ink-muted);">/ Administration</span></span>
+            </a>
+        @else
+            <a href="{{ route('home') }}" class="forma-top-brand">
+                <span>DocScolaire<sup>®</sup></span>
+            </a>
+        @endif
 
         <button type="button" class="theme-toggle-btn" id="themeToggleBtn" title="Basculer le thème">
             <svg id="themeIconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
