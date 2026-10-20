@@ -643,6 +643,33 @@ class SchoolAdminController extends Controller
         return back()->with('success', "Étudiant {$matricule} ({$request->input('prenom')} {$request->input('nom')}) enregistré avec succès ! Mot de passe initial : Secret2026!");
     }
 
+    /**
+     * Réinitialise le mot de passe d'un étudiant par l'administrateur de son école.
+     * Route: POST /admin-ecole/etudiants/{id}/reinitialiser-mdp
+     */
+    public function reinitialiserMotDePasseEtudiant(int $id)
+    {
+        $etudiant = Utilisateur::withoutGlobalScopes()
+            ->where('ecole_id', $this->ecoleId())
+            ->where('role', 'etudiant')
+            ->findOrFail($id);
+
+        $nouveauMdp = 'Secret' . date('Y') . '!';
+        $etudiant->update([
+            'mot_de_passe'              => \Illuminate\Support\Facades\Hash::make($nouveauMdp),
+            'doit_changer_mot_de_passe' => true,
+        ]);
+
+        AuditService::logAuth(
+            action:    LogActivite::ACTION_RESET_MDP,
+            cibleType: 'Utilisateur',
+            cibleId:   $etudiant->id,
+            details:   ['action' => 'reinitialisation_par_admin_ecole', 'matricule' => $etudiant->matricule]
+        );
+
+        return back()->with('success', "Mot de passe réinitialisé pour l'étudiant {$etudiant->prenom} {$etudiant->nom}. Mot de passe temporaire : {$nouveauMdp} (changement obligatoire à sa prochaine connexion).");
+    }
+
     // ── Paramètres (Personnalisation) ────────────────────────────────────────
 
     public function parametres()

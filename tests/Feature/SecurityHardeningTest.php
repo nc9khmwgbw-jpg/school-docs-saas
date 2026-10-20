@@ -269,6 +269,75 @@ class SecurityHardeningTest extends TestCase
         $response->assertSee("Contrôle Officiel Anti-Fraude");
         $response->assertSee("searchUuidInput");
     }
+
+    /**
+     * Teste que le rate-limiting protège également l'accès administrateur école contre la force brute.
+     */
+    public function test_admin_login_rate_limiting_blocks_brute_force(): void
+    {
+        for ($i = 0; $i < 6; $i++) {
+            $this->post('/admin-ecole/login', [
+                'email'        => 'attacker_target@ens.ma',
+                'mot_de_passe' => 'wrong_password_attempt',
+            ]);
+        }
+
+        $blockedResponse = $this->post('/admin-ecole/login', [
+            'email'        => 'attacker_target@ens.ma',
+            'mot_de_passe' => 'wrong_password_attempt',
+        ]);
+
+        $blockedResponse->assertSessionHasErrors('auth');
+    }
+
+    /**
+     * Teste qu'un étudiant ayant doit_changer_mot_de_passe = true est bloqué lors de la commande de document.
+     */
+    public function test_student_blocked_from_ordering_documents_when_must_change_password(): void
+    {
+        $ecole = Ecole::where('code_unique', 'ENS-2026')->firstOrFail();
+        $etudiant = Utilisateur::withoutGlobalScopes()
+            ->where('ecole_id', $ecole->id)
+            ->where('role', 'etudiant')
+            ->firstOrFail();
+
+        $modele = \App\Models\ModeleDocument::where('ecole_id', $ecole->id)->firstOrFail();
+
+        $etudiant->update(['doit_changer_mot_de_passe' => true]);
+
+        $response = $this->actingAs($etudiant)->post("/portal/{$ecole->code_unique}/demandes", [
+            'modele_id' => $modele->id,
+        ]);
+
+        $response->assertSessionHasErrors('password');
+
+        // Nettoyage
+        $etudiant->update(['doit_changer_mot_de_passe' => false]);
+    }
+
+    /**
+     * Teste que l'administrateur de l'école peut réinitialiser le mot de passe d'un étudiant.
+     */
+    public function test_school_admin_can_reset_student_password(): void
+    {
+        $admin = Utilisateur::withoutGlobalScopes()->where('role', 'admin_ecole')->where('email', 'admin@ens.ma')->firstOrFail();
+        $etudiant = Utilisateur::withoutGlobalScopes()->where('ecole_id', $admin->ecole_id)->where('role', 'etudiant')->firstOrFail();
+
+        $response = $this->actingAs($admin)->post("/admin-ecole/etudiants/{$etudiant->id}/reinitialiser-mdp");
+
+        $response->assertSessionHasNoErrors();
+        $response->assertSessionHas('success');
+
+        $etudiant->refresh();
+        $this->assertTrue((bool) $etudiant->doit_changer_mot_de_passe);
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('Secret' . date('Y') . '!', $etudiant->mot_de_passe));
+
+        // Nettoyage
+        $etudiant->update([
+            'mot_de_passe'              => \Illuminate\Support\Facades\Hash::make('Secret2026!'),
+            'doit_changer_mot_de_passe' => false,
+        ]);
+    }
 }
 
 

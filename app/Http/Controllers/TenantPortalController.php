@@ -516,6 +516,12 @@ class TenantPortalController extends Controller
             abort(403, "Tentative de commande de document non autorisée pour un autre établissement.");
         }
 
+        // 🔒 SÉCURITÉ RENFORCÉE : Obligation de changer le mot de passe temporaire avant toute commande
+        if ($etudiant->doit_changer_mot_de_passe) {
+            return redirect()->route('tenant.dashboard', ['code_unique' => $code_unique])
+                ->withErrors(['password' => "Pour commander des pièces académiques officielles, vous devez impérativement personnaliser votre mot de passe temporaire initial."]);
+        }
+
         $request->validate([
             'modele_id' => 'required|exists:modeles_documents,id'
         ]);

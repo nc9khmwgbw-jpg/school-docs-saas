@@ -1106,6 +1106,12 @@
             const modal = document.getElementById('passwordModal');
             if (modal) modal.style.display = 'none';
         }
+
+        @if($etudiant->doit_changer_mot_de_passe)
+            document.addEventListener('DOMContentLoaded', () => {
+                openPasswordModal();
+            });
+        @endif
     </script>
 </body>
 </html>

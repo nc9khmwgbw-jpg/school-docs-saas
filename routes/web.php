@@ -165,6 +165,7 @@ Route::group(['prefix' => 'admin-ecole', 'middleware' => ['web', 'auth', 'role:a
     Route::get('/import', [SchoolAdminController::class, 'importIndex'])->name('admin_ecole.import.index');
     Route::post('/import', [SchoolAdminController::class, 'importDonnees'])->name('admin_ecole.import');
     Route::post('/etudiants', [SchoolAdminController::class, 'etudiantsStore'])->name('admin_ecole.etudiants.store');
+    Route::post('/etudiants/{id}/reinitialiser-mdp', [SchoolAdminController::class, 'reinitialiserMotDePasseEtudiant'])->name('admin_ecole.etudiants.reinitialiser_mdp');
     Route::get('/import/{id}/rapport', [SchoolAdminController::class, 'importRapport'])->name('admin_ecole.import.rapport');
 
     // Téléchargement sécurisé document par admin école

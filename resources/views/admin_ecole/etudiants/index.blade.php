@@ -247,9 +247,17 @@
                         <span class="badge-status">● {{ ucfirst($etudiant->statut) }}</span>
                     </td>
                     <td style="text-align:right;">
-                        <a href="{{ route('admin_ecole.demandes.index', ['recherche' => $etudiant->matricule]) }}" class="btn-modern-ghost" style="padding:4px 12px;font-size:11.5px;">
-                            📋 Voir demandes &rarr;
-                        </a>
+                        <div style="display:inline-flex;gap:6px;align-items:center;">
+                            <form action="{{ route('admin_ecole.etudiants.reinitialiser_mdp', $etudiant->id) }}" method="POST" onsubmit="return confirm('Réinitialiser le mot de passe de {{ $etudiant->prenom }} {{ $etudiant->nom }} au mot de passe temporaire ? L\'étudiant sera obligé de le changer à sa prochaine connexion.');" style="margin:0;display:inline;">
+                                @csrf
+                                <button type="submit" class="btn-modern-ghost" style="padding:4px 10px;font-size:11.5px;color:#d97706;border-color:rgba(217,119,6,0.3);" title="Réinitialiser le mot de passe de cet étudiant">
+                                    🔑 Réinitialiser MDP
+                                </button>
+                            </form>
+                            <a href="{{ route('admin_ecole.demandes.index', ['recherche' => $etudiant->matricule]) }}" class="btn-modern-ghost" style="padding:4px 12px;font-size:11.5px;">
+                                📋 Voir demandes &rarr;
+                            </a>
+                        </div>
                     </td>
                 </tr>
             @empty
